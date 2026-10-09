@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>My assistant</title></head>
+<body>
+<h1>My assistant 1.0</h1>
+<p>Developers: Rithishwaran, Mahadeesh</p>
+<h2>Open the tools</h2>
+<p>Press NVDA+Shift+A, or use NVDA menu, Tools, My assistant. Choose a category in the Category combo box, then a tool in the Tools list, and press Enter. Every result opens in a read-only box with Copy and Close buttons.</p>
+<h2>Search box, menu sounds and staying in the list</h2>
+<p>The tools list starts in a Search box. Type part of a tool name and the list is filtered; spelling mistakes are fine (calclator finds Calculator, wether finds Weather) and related words work too (calendar lists the date tools). NVDA says how many tools were found. Press the down arrow to move to the results or Enter to run the first one.</p>
+<p>The list does not close when you run a tool. Close a result and you are back in the tools list. Press Escape or choose Close to leave it.</p>
+<p>Sounds: enter.wav plays when the tools list opens, exit.wav when it closes, and a soft tick plays as you move through it. To use your own files, put enter.wav, exit.wav or move.wav in the myAssistantSounds folder inside the NVDA configuration folder.</p>
+<h2>Website inspector (advanced internet tool)</h2>
+<p>Open the tools list, type inspector in the Search box and press Enter. Choose what to check, type a web address or domain such as example.com, and press OK. No account or API key is needed and nothing on the site is changed.</p>
+<p>The result begins with a score out of 100 and a letter grade, then a Fix first list with the most serious problems at the top, then the full details. Every line starts with Good, Warning or Problem.</p>
+<ul>
+<li>Full inspection: everything below in one report.</li>
+<li>Security headers and cookies: HSTS, Content-Security-Policy, clickjacking and MIME sniffing protection, Referrer-Policy, Permissions-Policy, software details leaked by the server, and the Secure, HttpOnly and SameSite flags of every cookie.</li>
+<li>Certificate and encryption: TLS version, cipher, HTTP/2 support, who the certificate was issued to and by, the names it covers, trust problems, self-signed certificates and the days left before it expires.</li>
+<li>Redirect trace: every step from the address you typed to the final page, redirect loops, long chains and whether plain HTTP is moved to HTTPS.</li>
+<li>Speed and timing breakdown: DNS, connection, TLS, server wait and download times, page size, compression and caching.</li>
+<li>Email domain security: SPF, DKIM, DMARC, MX servers, MTA-STS, CAA records and DNSSEC, with a separate email score.</li>
+<li>DNS records overview: IPv4, IPv6, aliases, name servers, mail servers and DNSSEC.</li>
+</ul>
+<p>A full inspection also shows technology and hosting clues (CDN, server software, page generator, who hosts the server and where) and checks for security.txt and robots.txt. Scores are an estimate based on common best practice. The DKIM check tries common selector names, so a missing result is not proof that DKIM is missing.</p>
+<h2>Internet tools (44)</h2>
+<p>Website inspector, International Space Station and people in space, Trivia quiz, Number and date facts, Random advice, Random Wikipedia article, TV show search, Recipe finder, Upcoming rocket launches, GitHub lookup, Software package info (PyPI and npm), Website status check, DNS lookup, Internet speed test, URL shortener, RSS feed reader, Password breach checker, Domain registration lookup (whois), Podcast finder, Web page archiver, Web page analyzer for SEO and accessibility, Translator (40 languages), Food product lookup, Postal code lookup, Anime and manga search, NASA Space picture of the day, and more. None of them needs an account or API key.</p>
+<h2>Alarm sounds and ring time</h2>
+<p>When you add an alarm you can choose your sound from a combo box of 100 sounds, listen to it with the Preview sound button (or by moving through the list), and choose how long it rings, from 1 to 60 minutes (5 by default). When the alarm rings a window opens with Stop as the default button, so press Enter or Escape to silence it, or choose Snooze for 5 minutes.</p>
+<h2>Sound effects</h2>
+<p>Sounds play when a result window opens or closes, while a tool is working, when it succeeds or fails, when you copy, and when an alarm rings. Turn them on or off with the Play sound effects check box in NVDA settings, My assistant category, or with the Sound effects settings and preview tool, where you can also listen to each sound.</p>
+<h2>Gemini models</h2>
+<p>Google Gemini offers Gemini 3.8, 3.7, 3.6, 3.5, 3.5 Flash-Lite, 3.1 Pro, 3.1 Flash-Lite, 3 Flash, 2.5 Pro, 2.5 Flash, 2.5 Flash-Lite and the flash-latest alias. Press Refresh model list in settings to download every model Google offers.</p>
+<h2>Set up AI</h2>
+<p>Open NVDA settings (NVDA+Control+G), choose the My assistant category, choose an AI provider, enter your API key, press Refresh model list, choose a model and press Test AI connection.</p>
+<h2>Combo boxes</h2>
+<p>Alarm manager, timer, currency converter, world clock, dates, cities, countries, languages and many more tools use combo boxes with ready-made lists. Type the first letters of an item to jump to it.</p>
+<h2>AI tools (70)</h2>
+<p>Writing and email, learning and study, code and computer help, analysis and text tools, and daily life. Copy text first and it appears in the Your text box automatically.</p>
+<h2>Gemini voices and Live Assistant</h2>
+<p>Both tools use your Google Gemini API key from NVDA settings, My assistant (choose Google Gemini as the provider and enter the key).</p>
+<p><b>AI: Gemini voices text to speech.</b> Enter your text, press Tab and choose one of 30 Gemini voices, press Tab and press Generate Audio. NVDA says Please wait and the audio plays. In the result box press Save Audio to save it as a WAV file, or Play again to hear it again. Long text is split automatically.</p>
+<p><b>AI: Gemini Live Assistant.</b> Press Start Conversation and talk to Gemini with your microphone; Gemini answers with its voice and the Conversation box keeps a written copy. Press Share Screen so that Gemini can see your screen and describe it or read it to you; pictures of your screen are sent to Google Gemini while sharing is on. Use headphones so that Gemini does not hear itself.</p>
+<h2>Five advanced Gemini tools</h2>
+<p>These use your Google Gemini API key. Find them in the category AI: chat, or type Gemini in the Search box.</p>
+<ul>
+<li><b>AI: Gemini web search with sources.</b> Gemini searches Google and answers with the latest information and a list of sources.</li>
+<li><b>AI: Gemini image and screen describer.</b> Describe a screenshot, an image file or a clipboard picture, read its text, or ask your own question. For a screenshot choose how many seconds to wait, then switch to the window you want described.</li>
+<li><b>AI: Gemini document and PDF reader.</b> Summarize a PDF or text file, list key points, read tables, or ask questions about it.</li>
+<li><b>AI: Gemini audio and video transcriber.</b> Transcribe an audio or video file up to about 14 MB, with speakers and timestamps if you want, or summarize it.</li>
+<li><b>AI: Gemini web page and YouTube summarizer.</b> Summarize a web page or a public YouTube video, or ask a question about it.</li>
+</ul>
+<p>Files, screenshots and links are sent to Google Gemini.</p>
+<h2>Show API key</h2>
+<p>In NVDA settings, My assistant, the API key is hidden by default. Check Show API key to see and edit the key as normal text; uncheck it to hide it again.</p>
+<h2>About and tutorials</h2>
+<p>Open NVDA settings, My assistant category, and press About and tutorials. You can also use NVDA menu, Tools, About My assistant.</p>
+</body></html>
