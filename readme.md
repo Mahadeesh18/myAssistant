@@ -9,3 +9,4 @@ sound effects (enter and exit sounds for the menu) and many offline calculators.
 Combo boxes give ready-made lists so you do not have to type and cannot make typing mistakes. Every result opens in a dialog.
 Set the AI provider, model and API key in NVDA settings, My assistant category, where you also find About and tutorials.
 Open the tools list with NVDA + Shift + A, then type in the search box to find a tool even with spelling mistakes.
+created by Rithishwaran and Mahadeesh.
