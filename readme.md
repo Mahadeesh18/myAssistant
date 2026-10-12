@@ -1,12 +1,13 @@
-myAssistant is a add-on for NVDA.
-its give more than 153 tools in one accessible add-on.
-an AI chat with 26 providers, Gemini voices text to speech, a Gemini Live Assistant you can talk to and share your screen with,
-70 advanced AI tools (writing, email, study, code, analysis and daily life), alarm manager, timer, stopwatch, world clock,
-currency converter, weather, prayer times, news, 44 internet tools (a very advanced website inspector for security, certificate, speed,
-DNS and email checks, translator, food nutrition lookup, postal codes, anime search, NASA picture of the day, space station,
-trivia, recipes, GitHub, DNS, speed test and more), 100 alarm sounds with a ring time of your choice,
-sound effects (enter and exit sounds for the menu) and many offline calculators.
-Combo boxes give ready-made lists so you do not have to type and cannot make typing mistakes. Every result opens in a dialog.
-Set the AI provider, model and API key in NVDA settings, My assistant category, where you also find About and tutorials.
-Open the tools list with NVDA + Shift + A, then type in the search box to find a tool even with spelling mistakes.
-created by Rithishwaran and Mahadeesh.
+myAssistant is a powerful and feature-rich add-on for NVDA that brings over 153 tools together in one fully accessible interface.
+​Key Features:
+​Advanced AI Integration: AI chat supporting 26 providers, Gemini voices text-to-speech, Gemini Live Assistant for voice chat and screen sharing, and 70 advanced AI tools for writing, email, study, coding, analysis, and daily life.
+​Internet & Web Tools: 44 internet-based tools including an advanced website inspector (for security, certificates, speed, DNS, and email checks), translator, food nutrition lookup, postal codes, anime search, NASA Picture of the Day, ISS tracking, trivia, recipes, GitHub integration, speed test, and more.
+​Time & Productivity: Alarm manager with 100 customizable alarm sounds and adjustable ring duration, timer, stopwatch, world clock, weather updates, prayer times, and news.
+​Calculators & Utilities: Currency converter and various offline calculators for quick computations.
+​User-Friendly Interface: Combo boxes with ready-made lists to prevent typing errors. Results are displayed in clear, accessible dialog boxes.
+​Audio Features: Customizable sound effects for menu navigation (enter and exit sounds).
+​How to Use & Customize Shortcut:
+​Custom Shortcut Setup: To set your preferred keyboard shortcut to open the MyAssistant menu, go to NVDA Menu > Preferences > Input Gestures, expand the MyAssistant category, and assign any key combination you prefer.
+​Configuration: Set your preferred AI provider, model, and API key under NVDA Settings > MyAssistant category, where you can also access the "About" section and tutorials.
+​Quick Navigation: Once opened, simply type in the search box to find any tool quickly—even with spelling mistakes!
+Created by: Rithishwaran and Mahadeesh.
