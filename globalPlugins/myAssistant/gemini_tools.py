@@ -40,7 +40,7 @@ SYSTEM = ("You are a helpful assistant inside a screen reader add-on. The user i
 def _models():
 	out = []
 	try:
-		mine = (providers.load().get("models", {}).get("gemini") or "").strip()
+		mine = str((providers.load().get("models") or {}).get("gemini") or "").strip()
 	except Exception:
 		mine = ""
 	for m in [mine] + FALLBACK_MODELS:
@@ -52,7 +52,7 @@ def _models():
 def _clean(text):
 	"""Remove markdown marks so NVDA does not read them aloud."""
 	text = re.sub(r"```[a-zA-Z]*\n?", "", text)
-	text = text.replace("**", "").replace("__", "").replace("`", "")
+	text = re.sub(r"\*\*(\S(?:.*?\S)?)\*\*", r"\1", text).replace("`", "")
 	text = re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", text)
 	text = re.sub(r"(?m)^(\s*)[*•]\s+", r"\1- ", text)
 	return text.strip()
@@ -70,7 +70,7 @@ def generate(parts, tools=None, system=SYSTEM):
 	last = ""
 	for model in _models():
 		req = urllib.request.Request(API % model, data=body, method="POST", headers={
-			"Content-Type": "application/json", "x-goog-api-key": key, "User-Agent": "NVDA-MyAssistant/1.1"})
+			"Content-Type": "application/json", "x-goog-api-key": key, "User-Agent": "NVDA-MyAssistant"})
 		try:
 			with urllib.request.urlopen(req, timeout=180) as r:
 				data = json.loads(r.read().decode("utf-8"))
