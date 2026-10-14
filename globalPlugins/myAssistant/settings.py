@@ -114,11 +114,13 @@ class MyAssistantSettingsPanel(settingsDialogs.SettingsPanel):
 		self._load(self._cur)
 
 	def _fields(self):
+		pid = self._pid(self.providerChoice.GetSelection())
+		p = providers.BY_ID[pid]
 		return {
-			"provider": self._pid(self.providerChoice.GetSelection()),
+			"provider": pid,
 			"key": self._getKey(),
-			"model": self.modelCombo.GetValue().strip(),
-			"url": self.urlEdit.GetValue().strip(),
+			"model": self.modelCombo.GetValue().strip() or p["model"],
+			"url": self.urlEdit.GetValue().strip() or p["url"],
 		}
 
 	def _alive(self):
