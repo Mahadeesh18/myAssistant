@@ -48,7 +48,7 @@ class _ModelUnavailable(Exception):
 
 def gemini_key():
 	try:
-		return (providers.load().get("keys", {}).get("gemini") or "").strip()
+		return str((providers.load().get("keys") or {}).get("gemini") or "").strip()
 	except Exception:
 		return ""
 
@@ -143,7 +143,7 @@ def _request(key, model, text, voice):
 		},
 	}
 	req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), method="POST", headers={
-		"Content-Type": "application/json", "x-goog-api-key": key, "User-Agent": "NVDA-MyAssistant/1.0"})
+		"Content-Type": "application/json", "x-goog-api-key": key, "User-Agent": "NVDA-MyAssistant"})
 	try:
 		with urllib.request.urlopen(req, timeout=180) as r:
 			data = json.loads(r.read().decode("utf-8"))
