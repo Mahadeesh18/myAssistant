@@ -95,12 +95,20 @@ class Microphone(object):
 		hdr_size = ctypes.sizeof(WAVEHDR)
 		while not self._stop.is_set():
 			busy = False
-			for hdr in self._hdrs:
+			handle = self._handle
+			if not handle:
+				break
+			for hdr in list(self._hdrs):
+				if self._stop.is_set():
+					break
 				if hdr.dwFlags & WHDR_DONE:
 					n = hdr.dwBytesRecorded
 					data = ctypes.string_at(hdr.lpData, n) if n else b""
 					hdr.dwBytesRecorded = 0
-					w.waveInAddBuffer(self._handle, ctypes.byref(hdr), hdr_size)
+					try:
+						w.waveInAddBuffer(handle, ctypes.byref(hdr), hdr_size)
+					except Exception:
+						return
 					busy = True
 					if data:
 						try:
