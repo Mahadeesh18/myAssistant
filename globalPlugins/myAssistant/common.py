@@ -14,7 +14,7 @@ addonHandler.initTranslation()
 
 from . import sounds
 
-UA = {"User-Agent": "Mozilla/5.0 (compatible; NVDA-MyAssistant/1.1)"}
+UA = {"User-Agent": "Mozilla/5.0 (compatible; NVDA-MyAssistant)"}
 
 
 def speak(text):
