@@ -144,10 +144,17 @@ def tool_country():
 	q = r["c"]
 
 	def work():
-		try:
-			r = http_json("https://restcountries.com/v3.1/name/%s?fields=name,capital,region,subregion,population,"
-				"area,languages,currencies,timezones,cca2" % quote(q))
-		except Exception:
+		fields = "name,capital,region,subregion,population,area,languages,currencies,timezones,cca2"
+		r = None
+		# An exact name first, so "Niger" does not give Nigeria; then a partial match.
+		for full in ("&fullText=true", ""):
+			try:
+				r = http_json("https://restcountries.com/v3.1/name/%s?fields=%s%s" % (quote(q), fields, full))
+				if r:
+					break
+			except Exception:
+				r = None
+		if not r:
 			return _("Country not found.")
 		c = r[0]
 		cur = ", ".join("%s (%s)" % (v.get("name"), k) for k, v in (c.get("currencies") or {}).items())
@@ -252,9 +259,11 @@ def tool_crypto():
 		out = []
 		for k, v in d.items():
 			ch = v.get(cur + "_24h_change")
+			if v.get(cur) is None:
+				continue
 			out.append("%s: %s %s%s" % (k.capitalize(), "{:,}".format(v.get(cur)), cur.upper(),
 				(", 24 hour change %+.2f%%" % ch) if ch is not None else ""))
-		return "\n".join(out)
+		return "\n".join(out) or _("No price is available for this choice.")
 	run_async(work, _("Cryptocurrency prices"))
 
 
@@ -270,7 +279,7 @@ def tool_news():
 		return
 
 	def work():
-		root = ET.fromstring(http_text("https://feeds.bbci.co.uk/%s/rss.xml" % NEWS[i][1]).encode("utf-8"))
+		root = ET.fromstring(http_text("https://feeds.bbci.co.uk/%s/rss.xml" % NEWS[i][1]))
 		out = ["BBC News: %s" % NEWS[i][0], ""]
 		for n, it in enumerate(root.iter("item"), 1):
 			if n > 12:
@@ -285,7 +294,7 @@ def tool_hackernews():
 	def work():
 		ids = http_json("https://hacker-news.firebaseio.com/v0/topstories.json")[:12]
 		with ThreadPoolExecutor(6) as ex:
-			items = list(ex.map(lambda i: http_json("https://hacker-news.firebaseio.com/v0/item/%d.json" % i), ids))
+			items = [x for x in ex.map(lambda i: http_json("https://hacker-news.firebaseio.com/v0/item/%d.json" % i), ids) if x]
 		out = ["Top Hacker News stories", ""]
 		for n, it in enumerate(items, 1):
 			out.append("%d. %s (%s points, %s comments)\n   %s" % (n, it.get("title"), it.get("score"),
