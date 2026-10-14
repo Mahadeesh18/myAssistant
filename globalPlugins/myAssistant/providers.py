@@ -77,7 +77,8 @@ CONFIG_FILE = os.path.join(globalVars.appArgs.configPath, "myAssistant.json")
 def load():
 	try:
 		with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-			return json.load(f)
+			data = json.load(f)
+		return data if isinstance(data, dict) else {}
 	except Exception:
 		return {}
 
@@ -95,9 +96,9 @@ def current():
 	p = BY_ID[pid]
 	return {
 		"provider": pid,
-		"key": c.get("keys", {}).get(pid, "").strip(),
-		"model": c.get("models", {}).get(pid, "").strip() or p["model"],
-		"url": c.get("urls", {}).get(pid, "").strip() or p["url"],
+		"key": str((c.get("keys") or {}).get(pid) or "").strip(),
+		"model": str((c.get("models") or {}).get(pid) or "").strip() or p["model"],
+		"url": str((c.get("urls") or {}).get(pid) or "").strip() or p["url"],
 	}
 
 
@@ -108,11 +109,13 @@ def current_name():
 def _post(url, headers, payload):
 	headers = dict(headers)
 	headers["Content-Type"] = "application/json"
-	headers["User-Agent"] = "NVDA-MyAssistant/1.1"
+	headers["User-Agent"] = "NVDA-MyAssistant"
 	req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
 	try:
 		with urllib.request.urlopen(req, timeout=90) as r:
 			return json.loads(r.read().decode("utf-8"))
+	except ValueError:
+		raise RuntimeError("The server did not send a valid answer. Check the base URL and try again.")
 	except urllib.error.HTTPError as e:
 		try:
 			body = e.read().decode("utf-8", "replace")[:400]
@@ -121,6 +124,8 @@ def _post(url, headers, payload):
 		raise RuntimeError("HTTP %s. %s" % (e.code, body))
 	except urllib.error.URLError as e:
 		raise RuntimeError("Connection failed: %s" % e.reason)
+	except OSError as e:
+		raise RuntimeError("Connection failed: %s" % e)
 
 
 def ask(messages, system=None, override=None):
@@ -159,7 +164,7 @@ def list_models(cfg):
 		headers = {"x-api-key": key, "anthropic-version": "2023-06-01"}
 	else:
 		headers = {"Authorization": "Bearer " + key} if key else {}
-	headers["User-Agent"] = "NVDA-MyAssistant/1.1"
+	headers["User-Agent"] = "NVDA-MyAssistant"
 	req = urllib.request.Request(base + "/models?limit=200" if p["kind"] == "anthropic" else base + "/models",
 		headers=headers)
 	try:
