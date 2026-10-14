@@ -395,7 +395,7 @@ def tool_rss():
 	url = dict(FEEDS).get(pick) or (pick if re.match(r"^https?://", pick, re.I) else "https://" + pick)
 
 	def work():
-		root = ET.fromstring(http_text(url, timeout=25).encode("utf-8"))
+		root = ET.fromstring(http_text(url, timeout=25))
 		atom = "{http://www.w3.org/2005/Atom}"
 		title = root.findtext("channel/title") or root.findtext(atom + "title") or url
 		rows = []
