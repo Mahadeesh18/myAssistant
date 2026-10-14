@@ -61,6 +61,8 @@ def tool_units():
 
 
 def _fmtnum(x):
+	if not math.isfinite(x):
+		return str(x)
 	if x == int(x) and abs(x) < 1e15:
 		return "{:,}".format(int(x))
 	return "{:,.6f}".format(x).rstrip("0").rstrip(".")
@@ -401,7 +403,11 @@ def _check_loan(v):
 			return _("The interest rate cannot be negative.")
 		if int(float(v["m"])) < 1:
 			return _("The loan term must be at least one month.")
-	except ValueError:
+		if int(float(v["m"])) > 1200:
+			return _("The loan term cannot be more than 1200 months.")
+		if not (math.isfinite(float(v["p"])) and math.isfinite(float(v["r"]))) or float(v["r"]) > 1000:
+			return _("Please enter a sensible loan amount and interest rate.")
+	except (ValueError, OverflowError):
 		return _("The interest rate and loan term must be numbers.")
 	return None
 
@@ -417,7 +423,11 @@ def tool_loan():
 	if not r:
 		return
 	p, rate, m = r["p"], float(r["r"]), int(float(r["m"]))
-	pay, total, interest = emi(p, rate, m)
+	try:
+		pay, total, interest = emi(p, rate, m)
+	except (OverflowError, ZeroDivisionError):
+		show_text(_("Loan calculator"), _("These numbers are too large to calculate."))
+		return
 	show_text(_("Loan calculator"), "Loan %s at %s%% a year for %d months (%.1f years)\nMonthly payment: %s\n"
 		"Total to repay: %s\nTotal interest: %s" % (_fmtnum(p), _fmtnum(rate), m, m / 12, "{:,.2f}".format(pay),
 		"{:,.2f}".format(total), "{:,.2f}".format(interest)))
