@@ -31,17 +31,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			settingsDialogs.NVDASettingsDialog.categoryClasses.remove(MyAssistantSettingsPanel)
 		except ValueError:
 			pass
-		try:
-			gui.mainFrame.sysTrayIcon.toolsMenu.Remove(self.menuItem)
-		except Exception:
-			pass
-		try:
-			gui.mainFrame.sysTrayIcon.toolsMenu.Remove(self.aboutItem)
-		except Exception:
-			pass
+		tray = gui.mainFrame.sysTrayIcon
+		for item in (self.menuItem, self.aboutItem):
+			try:
+				tray.Unbind(wx.EVT_MENU, source=item)
+			except Exception:
+				pass
+			try:
+				tray.toolsMenu.Remove(item)
+			except Exception:
+				pass
 		tools.stop_engine()
 
-	@scriptHandler.script(description=_("Open the My assistant tools list"), gesture="kb:NVDA+shift+a")
+	@scriptHandler.script(description=_("Open the My assistant tools list"))
 	def script_openTools(self, gesture):
 		wx.CallAfter(tools.open_tools)
 
