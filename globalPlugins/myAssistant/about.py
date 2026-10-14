@@ -16,7 +16,7 @@ def version():
 	try:
 		return str(addonHandler.getCodeAddon().manifest["version"])
 	except Exception:
-		return "1.0"
+		return _("unknown")
 
 
 def about_text():
@@ -37,7 +37,7 @@ def about_text():
 def tutorials():
 	return [
 		(_("Getting started"), _(
-			"1. Press NVDA+Shift+A anywhere to open the My assistant tools list.\n"
+			"1. Open the My assistant tools list from the NVDA menu: Tools, My assistant. Or assign your own key in NVDA menu, Preferences, Input gestures, My assistant category.\n"
 			"2. The cursor starts in the Search box. Type part of a tool name, for example weather or alarm; "
 			"small spelling mistakes are fine. Press the down arrow to move to the results, or Enter to run the first one.\n"
 			"3. Or press Tab to the Category combo box and choose a group of tools, for example "
@@ -164,10 +164,9 @@ def tutorials():
 			"Type the first letters of a code, such as EUR, to jump to it. Rates are downloaded live.\n"
 			"World clock: choose a time zone from the combo box to hear the current time there.")),
 		(_("Keyboard shortcuts"), _(
-			"NVDA+Shift+A opens the tools list.\n"
-			"Other commands, such as the AI chat, battery status and date and time, have no shortcut by "
-			"default. To give them one, open NVDA menu, Preferences, Input gestures, then find the "
-			"My assistant category.")),
+			"My assistant has no built-in shortcuts. Every command, such as opening the tools list, "
+			"About, the AI chat, battery status and date and time, can be given your own key in "
+			"NVDA menu, Preferences, Input gestures, then the My assistant category.")),
 		(_("Troubleshooting"), _(
 			"Error: No API key set. Enter a key in NVDA settings, My assistant.\n"
 			"Error: HTTP 401 or 403. The key is wrong or has no access to the chosen model.\n"
