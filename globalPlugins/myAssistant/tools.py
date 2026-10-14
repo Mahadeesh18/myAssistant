@@ -36,7 +36,7 @@ from .offline import OFFLINE_TOOLS
 addonHandler.initTranslation()
 
 CFG = globalVars.appArgs.configPath
-UA = {"User-Agent": "NVDA-MyAssistant/1.0"}
+UA = {"User-Agent": "NVDA-MyAssistant"}
 
 
 # ---------------------------------------------------------------- helpers
@@ -72,7 +72,8 @@ NOTES_FILE = os.path.join(CFG, "myAssistantNotes.json")
 def _read(path):
 	try:
 		with open(path, "r", encoding="utf-8") as f:
-			return json.load(f)
+			data = json.load(f)
+		return data if isinstance(data, list) else []
 	except Exception:
 		return []
 
@@ -84,7 +85,7 @@ def _write(path, data):
 
 def start_engine():
 	global _thread
-	_alarms[:] = _read(ALARM_FILE)
+	_alarms[:] = [a for a in _read(ALARM_FILE) if isinstance(a, dict) and isinstance(a.get("time"), str)]
 	_stop.clear()
 	_thread = threading.Thread(target=_loop, daemon=True)
 	_thread.start()
@@ -96,27 +97,37 @@ def stop_engine():
 
 def _loop():
 	while not _stop.wait(1):
-		now = datetime.datetime.now()
-		hm, today = now.strftime("%H:%M"), now.date().isoformat()
-		fire = []
-		with _lock:
-			changed = False
-			for a in list(_alarms):
-				if a["time"] == hm and a.get("last") != today:
-					a["last"] = today
-					fire.append((a.get("label") or a["time"], a.get("sound", DEFAULT_SOUND), a.get("minutes", 5)))
-					changed = True
-					if not a.get("daily"):
-						_alarms.remove(a)
-			if changed:
+		try:
+			_tick()
+		except Exception:
+			log.error("My assistant: the alarm check failed", exc_info=True)
+
+
+def _tick():
+	now = datetime.datetime.now()
+	hm, today = now.strftime("%H:%M"), now.date().isoformat()
+	fire = []
+	with _lock:
+		changed = False
+		for a in list(_alarms):
+			if a.get("time") == hm and a.get("last") != today:
+				a["last"] = today
+				fire.append((a.get("label") or a["time"], a.get("sound", DEFAULT_SOUND), a.get("minutes", 5)))
+				changed = True
+				if not a.get("daily"):
+					_alarms.remove(a)
+		if changed:
+			try:
 				_write(ALARM_FILE, _alarms)
-			t = time.time()
-			for tm in list(_timers):
-				if tm[0] <= t:
-					_timers.remove(tm)
-					fire.append((tm[1], DEFAULT_SOUND, 1))
-		for f in fire:
-			threading.Thread(target=_alert, args=f, daemon=True).start()
+			except OSError:
+				log.error("My assistant: the alarms could not be saved", exc_info=True)
+		t = time.time()
+		for tm in list(_timers):
+			if tm[0] <= t:
+				_timers.remove(tm)
+				fire.append((tm[1], DEFAULT_SOUND, 1))
+	for f in fire:
+		threading.Thread(target=_alert, args=f, daemon=True).start()
 
 
 RING_MINUTES = [1, 2, 3, 5, 10, 15, 30, 60]
@@ -174,19 +185,19 @@ class RingDialog(wx.Dialog):
 
 
 def _show_ring(box, text, stop, sound, minutes):
+	gui.mainFrame.prePopup()
 	try:
-		gui.mainFrame.prePopup()
 		dlg = RingDialog(text, stop, sound, minutes)
 		box.append(dlg)
 		dlg.Show()
 		dlg.Raise()
 	except Exception:
-		pass
+		gui.mainFrame.postPopup()
 
 
 def _alert(text, sound=DEFAULT_SOUND, minutes=5):
 	"""Ring with the chosen sound until it is stopped or the chosen number of minutes has passed."""
-	if not 0 <= sound < len(ALARM_SOUNDS):
+	if not isinstance(sound, int) or not 0 <= sound < len(ALARM_SOUNDS):
 		sound = DEFAULT_SOUND
 	_name, fname, length = ALARM_SOUNDS[sound]
 	path = sounds.alarm_path(fname)
@@ -291,7 +302,7 @@ class AlarmDialog(_ListDialog):
 		with _lock:
 			return [("%s - %s (%s, %s, %s)" % (a["time"], a.get("label") or _("Alarm"),
 				_("daily") if a.get("daily") else _("once"),
-				ALARM_SOUNDS[min(a.get("sound", DEFAULT_SOUND), len(ALARM_SOUNDS) - 1)][0],
+				ALARM_SOUNDS[a["sound"] if isinstance(a.get("sound"), int) and 0 <= a["sound"] < len(ALARM_SOUNDS) else DEFAULT_SOUND][0],
 				_("rings %d min") % a.get("minutes", 5))) for a in _alarms]
 
 	def add(self):
@@ -314,6 +325,9 @@ class AlarmDialog(_ListDialog):
 		if i < 0:
 			return
 		with _lock:
+			if i >= len(_alarms):
+				self.refresh()
+				return
 			del _alarms[i]
 			_write(ALARM_FILE, _alarms)
 		self.refresh()
@@ -329,7 +343,7 @@ class NotesDialog(_ListDialog):
 		super().__init__()
 
 	def labels(self):
-		return [(n.splitlines() or [""])[0][:80] for n in self.notes]
+		return [(str(n).splitlines() or [""])[0][:80] for n in self.notes]
 
 	def add(self):
 		t = ask_text(_("Note text:"), _("Add note"), multiline=True)
@@ -340,12 +354,12 @@ class NotesDialog(_ListDialog):
 
 	def view(self):
 		i = self.lst.GetSelection()
-		if i >= 0:
+		if 0 <= i < len(self.notes):
 			show_text(_("Note"), self.notes[i])
 
 	def delete(self):
 		i = self.lst.GetSelection()
-		if i >= 0:
+		if 0 <= i < len(self.notes):
 			del self.notes[i]
 			_write(NOTES_FILE, self.notes)
 			self.refresh()
@@ -368,6 +382,7 @@ class ChatDialog(wx.Dialog):
 		super().__init__(gui.mainFrame, title=_("AI chat - %s") % providers.current_name(),
 			style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 		self.msgs = []
+		self._gen = 0
 		s = wx.BoxSizer(wx.VERTICAL)
 		h = guiHelper.BoxSizerHelper(self, sizer=s)
 		self.history = h.addLabeledControl(_("Conversation:"), wx.TextCtrl,
@@ -392,6 +407,7 @@ class ChatDialog(wx.Dialog):
 
 	def onClear(self, e):
 		self.msgs = []
+		self._gen += 1
 		self.history.SetValue("")
 		self.input.SetFocus()
 		speak(_("Conversation cleared"))
@@ -406,6 +422,7 @@ class ChatDialog(wx.Dialog):
 		self.sendBtn.Disable()
 		speak(_("Thinking"))
 		msgs = list(self.msgs)
+		gen = self._gen
 		system = CHAT_BASE + (CHAT_STYLES[max(0, self.style.GetSelection())][1] or "")
 
 		def work():
@@ -416,12 +433,14 @@ class ChatDialog(wx.Dialog):
 
 		def done(reply):
 			try:
+				self.sendBtn.Enable()
+				if gen != self._gen:
+					return  # the conversation was cleared while waiting
 				self.history.AppendText(_("AI: %s") % reply + "\n\n")
 				if not reply.startswith(_("Error:")):
 					self.msgs.append({"role": "assistant", "content": reply})
-				else:
+				elif self.msgs:
 					self.msgs.pop()
-				self.sendBtn.Enable()
 			except RuntimeError:
 				return
 			speak(reply)
@@ -474,6 +493,10 @@ def tool_stopwatch():
 		_sw["elapsed"] = _sw_now()
 		_sw["start"] = None
 		show_text(_("Stopwatch"), _("Stopped at %s") % _fmt(_sw["elapsed"]))
+	elif i == 0:
+		show_text(_("Stopwatch"), _("The stopwatch is already running. Elapsed %s") % _fmt(_sw_now()))
+	elif i == 1:
+		show_text(_("Stopwatch"), _("The stopwatch is not running."))
 	elif i == 2:
 		show_text(_("Stopwatch"), _("Elapsed %s") % _fmt(_sw_now()))
 	elif i == 3:
@@ -729,13 +752,14 @@ def tool_sysinfo():
 def tool_network():
 	def work():
 		out = ["Computer name: " + socket.gethostname()]
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		try:
-			s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 			s.connect(("8.8.8.8", 80))
 			out.append("Local IP: " + s.getsockname()[0])
-			s.close()
 		except OSError:
 			out.append("Local IP: not connected")
+		finally:
+			s.close()
 		try:
 			r = subprocess.run(["netsh", "wlan", "show", "interfaces"], capture_output=True, text=True,
 				creationflags=0x08000000, timeout=8).stdout
