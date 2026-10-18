@@ -1,0 +1,2397 @@
+Jieshuo Screenreader API Help
+Jieshuo multi-function gestures and plugins use Lua syntax combined with Jieshuo proprietary APIs to implement multiple functions in a single gesture.
+If you are familiar with Lua and AndroLua, you can implement even more functions; this document only covers the proprietary API section.
+Basic Concepts:
+service: The accessibility service, which is the core of this screen reading service. All functions revolve around this service.
+Parameter Type Description:
+node: The current focus, i.e., the node that currently has accessibility focus. Most operations are performed on this focus.
+bool: Boolean value, true or false.
+text: Text content.
+return: Returns a value to inform the screen reader whether you want it to execute the default operation for that gesture.
+Returning true intercepts the gesture; returning false passes it to the previous layer. For example, if a per-app gesture returns false, the global gesture handles it; if the global gesture returns false, the default gesture handles it.
+Common Commands:
+service.execute(command, node)
+These are built-in instructions designed to simplify development. Returns true if successful, false otherwise.
+service.postExecute(time, command, node)
+Executes a command after a delay.
+text = service.getText(node)
+Gets the text information of the specified node.
+service.setText(node, text)
+Sets the text content of the specified focus input box.
+service.setText(text)
+Sets the text content of the input box currently focused on the screen.
+service.copy()
+Copies the text content of the current focus to the clipboard.
+service.appendCopy()
+Appends the text content of the current focus to the clipboard.
+service.copy(text)
+Copies specified text content to the clipboard.
+service.appendCopy(text)
+Appends specified text content to the clipboard.
+service.paste()
+Pastes clipboard content into the current input box.
+service.paste(node)
+Pastes clipboard content into the specified input box.
+service.toNext()
+Moves to the next focus.
+service.toNext(node, bool)
+Moves to the next focus of a specified node. If bool is true, it searches child nodes; if false, it does not.
+service.toPrevious()
+Moves to the previous focus.
+service.toPrevious(node, bool)
+Moves to the previous focus of a specified node. If bool is true, it searches child nodes; if false, it does not.
+service.toNextChar()
+Moves to the next character.
+service.toPreviousChar()
+Moves to the previous character.
+service.toNextLine()
+Moves to the next line.
+service.toPreviousLine()
+Moves to the previous line.
+service.toTextStart()
+Moves to the beginning of the text.
+service.toTextEnd()
+Moves to the end of the text.
+service.toListViewStart()
+Moves to the beginning of a list view.
+service.toListViewEnd()
+Moves to the end of a list view.
+service.getRootNodeInfo()
+Gets the root node information.
+service.ocr(node)
+Performs text recognition (OCR) on the specified node. Available for premium members only.
+service.setTimerMode(bool)
+Enables or disables timer mode.
+service.setAutoReadEnabled(bool)
+Enables or disables reading mode.
+service.setAutoNext(bool)
+Enables or disables automatic browsing mode.
+bool = service.isEditView(node)
+Determines if the current node is an edit box.
+bool = service.isSeekBar(node)
+Determines if the current node is a progress slider.
+bool = service.isListView(node)
+Determines if the current node is a list.
+bool = service.isInListView(node)
+Determines if the current node is within a list.
+bool = service.isInWebView(node)
+Determines if the current node is within a web view.
+bool = service.isClick(node)
+Determines if the current node is clickable.
+service.toClick()
+Clicks the current focus. On Android 7+, it prioritizes simulated human touch.
+service.toClick(node)
+Clicks the specified node.
+service.toLongClick()
+Long-presses the current focus.
+service.toLongClick(node)
+Long-presses the specified node.
+service.toBack()
+Goes back.
+service.toHome()
+Returns to the home screen.
+service.toNotification()
+Opens the notification shade.
+service.toParent()
+Opens the recent tasks list.
+service.scrollBackward(node)
+Scrolls backward.
+service.scrollForward(node)
+Scrolls forward.
+service.loadGesturePackage(name)
+Loads a gesture scheme.
+service.click(x, y)
+Simulates a human tap at specified screen coordinates. Android 7+ only.
+service.longClick(x, y)
+Simulates a human long-press at specified screen coordinates. Android 7+ only.
+service.press(x, y, t)
+Simulates a human press at specified coordinates for a specified duration (t). Android 7+ only.
+service.swipe(x1, y1, x2, y2, t)
+Simulates a human swipe from one position to another over a specified duration. Android 7+ only.
+Code Control Statements:
+if condition then
+-- code to execute
+end
+Executes code if the condition is met.
+Example:
+if service.isEditView(node) then
+service.execute("Split Edit", node)
+return true
+end
+This means: if the focus is an edit box, open Split Edit.
+for n = 1, repeat_count do
+-- code to execute
+end
+Repeats code a specified number of times.
+Example:
+for n = 1, 10 do
+service.toBack()
+end
+Repeats the back action 10 times.
+Defining Functions:
+function function_name(parameters)
+-- function code
+end
+Functions are blocks of code that can be reused effectively.
+Example: The following function adds data to a list:
+function append(t1, t2)
+for k, v in ipairs(t2) do
+table.insert(t1, v)
+end
+end
+click_list = {}
+button_list = {"%Click", "%Back"}
+for n = 1, 10 do
+append(click_list, button_list)
+end
+Repeats adding the contents of button_list to click_list 10 times.
+function swipe_up()
+service.swipe(500, 300, 500, 1000, 1000)
+return true
+end
+Simulates a swipe on the screen. It can be used in gesture code:
+service.click({{">WhatsApp", "%swipe_up"}})
+Opens WhatsApp and simulates a swipe from top to bottom.
+Automatic Clicking:
+service.click({button_list})
+Sequentially searches for and clicks buttons in the list.
+Button names support wildcards and symbols:
+Â * (Hash) at the beginning: Searches for a custom label.
+Â *Â  Â  * (Asterisk) at the beginning or end: Indicates other characters may exist before or after.
+Â * (Hash) at the end: Indicates the index of the button (e.g., Button#1).
+Â * @ (At symbol): Restricts search to a specific app.
+Â * $ (Dollar): Specifies a delay after execution.
+Â  Â Arguments support multiple tables, searched in order. Returns true if successful, false otherwise.
+Delayed Click:
+service.postClick(time, {button_list})
+Executes a click after a certain time (in milliseconds). Definition is the same as click. No return value.
+service.plugin(plugin_name, node)
+Executes a plugin and returns values defined by the plugin.
+Jieshuo gestures are most flexible with automatic clicking. The basic form is:
+button_list = {}
+service.click(button_list)
+return true
+The format for the button list is button names and symbols enclosed in curly braces {}.
+Simple example:
+button_list = {"OK"}
+service.click(button_list)
+return true
+This clicks the "OK" button.
+button_list = {"OK", "Done"}
+service.click(button_list)
+return true
+This is a first-level brace: if "OK" exists, click it; if not, look for "Done".
+To click a sequence of buttons:
+button_list = {{"Group Info", "Files"}}
+service.click(button_list)
+return true
+This is a second-level brace: buttons inside will be clicked sequentially unless one does not exist.
+Enhancing functions with symbols:
+Â *Â  Â  * (Asterisk): Matches partial text. E.g., "Jieshuo Group*" matches "Jieshuo Group (99 unread)".
+Â * (Hash): Indexing. E.g., "OK#1" clicks the first "OK" button. "OK#-1" clicks the last.
+Â * at start: Searches for a label instead of a name.
+Â * | (Vertical bar): "OR" logic. E.g., "OK|Done" clicks either OK or Done.
+Â * & (Ampersand): "AND" logic. E.g., "OK&Exit" clicks OK only if the text "Exit" is present on the screen.
+Â * &! (Ampersand exclamation): "AND NOT" logic. E.g., "OK&!Exit" clicks OK only if "Exit" is NOT on the screen.
+Â * & at start: Checks focus type.
+Â  Â * &Editable
+Â  Â * &Clickable
+Â  Â * &List
+Â  Â * &ListItem
+Â  Â * &EditBox (Specifically for input fields that trigger the keyboard)
+Â * $ (Dollar): Delay. E.g., "Group Info$2000, Files" clicks Group Info, waits 2 seconds, then clicks Files.
+Â * < (Less than) at end: Repeat. E.g., "Next<10" clicks Next 10 times.
+Â * < (Less than) at start: Locate only. E.g., "<OK" finds OK but does not click.
+Â * > (Greater than) at end: Wait timeout. E.g., "Group Info, Files>10" clicks Group Info then waits up to 10 seconds for "Files" to appear; if it appears, it clicks immediately.
+Â  Â >Â 
+Â * > (Greater than) at start: Opens an app. E.g., ">WhatsApp" opens WhatsApp.
+Â  Â >Â 
+Extended symbols:
+Â * % (Percent): Executes common instructions. E.g., "%Copy" copies text, "%Read All" reads the whole screen. It can also execute functions defined in the script.
+Â * [] (Square brackets): Simulates a direct touch/click (different from accessibility click). E.g., "[Play]" simulates a tap on the Play button. "[%Click]" simulates a tap on the current focus.
+Â * [x, y]: Simulates a click at coordinates. Use integers for pixels or decimals for relative screen position. E.g., "[300, 500]" or "[0.3, 0.5]".
+Â * [x, y, t]: Simulates a click at coordinates for duration t. E.g., "[300, 500, 1000]".
+Â * [x1, y1, x2, y2, t]: Simulates a swipe from x1,y1 to x2,y2 over time t. E.g., "[300, 500, 300, 800, 1000]".
+Â * [x1, y1, x2, y2, t, count]: Simulates a swipe repeated for a specific count.
+Branching code for unexpected scenarios (e.g., handling pop-up announcements):
+button_list = {
+{ ">QQ",
+"Jieshuo Group*",
+{ "I have read the announcement|I know" },
+"Group Info",
+"Files"
+}
+}
+The braces around "I have read..." indicate a conditional branch: if the button exists, click it; if not, skip it without stopping the sequence.
+For complex scenarios, you can nest multiple braces:
+button_list = {
+{ ">QQ",
+"Jieshuo Group*",
+{
+{"Read Announcement", "OK"},
+{"Got it", "OK"}
+},
+"Group Info",
+"Files"
+}
+}
+Now i provided some facility for you directly copy anyÂ  syntax from tool and pasteÂ  and create
+service.setAsyncTtsScale( giveÂ  value two adjust secondary tts ret acceleration)
+service.reLoad()
+Â this sintex refreshÂ  Gesture scheme
+service.tool(" right tool name to open")
+service.setText(" write text to pest alternative of paste service")
+service.installApp(" write application name to install from play store")
+service.startApp(" write application name to open")
+require "import"
+web=LuaWebView(activity)
+activity.setContentView(web)
+web.loadUrl(" pest link to open")
+service.setTtsScale( give value to adjust tts rate acceleration)
+service.postSpeak(Â  giveÂ  value in milliseconds to wait, " right text to read")
+service.postasyncSpeak( give value in millisecondsÂ  to wait, " write text to read secondary tts")
+local numPlays = value for repeat
+local totalTime = time in meli seconds
+local delayBetweenPlays = totalTime / numPlays
+for i = 1, numPlays do
+Â  Â  write any play sound syntax
+Â  Â  if i < numPlays then
+Â  Â  Â  Â  local startTime = os.clock()
+Â  Â  Â  Â  while os.clock() - startTime < delayBetweenPlays do
+Â  Â  Â  Â  end
+Â  Â  end
+end
+service.setTTSSpeed( number value for adjust speed)
+service.setTtsPitch( give value for adjust speech)
+service.loadSound()
+Â this sintex work switch to default sound theme
+service.callPhone(" right number to call")
+service.deleteApp(" pest app name to delete")
+require "import"
+import "android.media.MediaPlayer"
+local mediaPlayer = MediaPlayer()
+mediaPlayer.reset()
+mediaPlayer.setDataSource(" give path 2 play audio file for example/storage/emulated/0/Notifications/Om namah shivay (Sms Tone).mp3")
+mediaPlayer.prepare()
+mediaPlayer.start()
+message this sintex read time date
+require "import"
+import "java.text.SimpleDateFormat"
+import "java.util.Date"
+import "android.content.Context"
+import "android.content.Intent"
+import "android.content.IntentFilter"
+import "android.os.BatteryManager"
+function getGreeting()
+Â  Â  local hour = tonumber(os.date("%H"))
+Â  Â  if hour < 12 then
+Â  Â  Â  Â  return "Good morning"
+Â  Â  elseif hour < 18 then
+Â  Â  Â  Â  return "Good afternoon"
+Â  Â  else
+Â  Â  Â  Â  return "Good evening"
+Â  Â  end
+end
+function speakDateTime(context)
+Â  Â  local currentDate = os.date("%A, %B %d, %Y")
+Â  Â  local currentTime = os.time()
+Â  Â  local currentTimeInMillis = currentTime * 1000 -- Convert seconds to milliseconds
+Â  Â  local formattedTime = SimpleDateFormat("hh:mm:ss.SSS a").format(Date(currentTimeInMillis))
+Â  Â  local batteryIntent = context.registerReceiver(nil, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+Â  Â  local level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+Â  Â  local scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+Â  Â  local batteryPercent = math.floor((level / scale) * 100)
+Â  Â  -- Get greeting based on the time of day
+Â  Â  local greeting = getGreeting()
+Â  Â  -- Speak the message
+Â  Â  local message = greeting .. "! Today is " .. currentDate .. ". The time is " .. formattedTime .. ". The battery level is " .. batteryPercent .. " percent."
+Â  Â  context.speak(message)
+end
+speakDateTime(this)
+return true
+service.speak("Â  write text to readÂ  ")
+service.speakAllText()
+Made from this syntax. extension. Reads all your screens..
+service.asyncSpeak("Â  write text to read secondary tts ")
+service.paste("Â  write text to paste ")
+service.shareFile("right file path to share fileà¥¤Â  Â example pathà¥¤ /storage/emulated/0/Notifications/Om namah shivay (Sms Tone).mp3")
+service.postClick(give value in milliseconds to waità¥¤ , {"right option to clickà¥¤ ",
+continue with same process})
+service.copy(" right text to copy ")
+service.appendCopy(" write text to append ")
+service.openUrl("Â  pest link to open in jieshuoÂ  web browser")
+print(" rightÂ  text to display")
+service.playSoundTick()
+Â  thisÂ  syntax give you tick sound
+service.playSoundGestureBegin()
+Â this sintex give you multiÂ  Â partÂ  gesture part 1 sound
+service.playSoundGestureEnd()
+Â this sintex give you multi part gestureÂ  part 2 sound
+service.playSoundClock()
+Â  this cintex give you csr clock sound
+require "import"Â 
+Â  import "android.widget.*"Â 
+Â  import "com.androlua.*"Â 
+layout={Â 
+Â  Â  GridView,Â 
+Â  Â  id="grid",Â 
+Â  Â  numColumns=4,Â 
+Â  Â  layout_width="fill",Â 
+Â  Â  layout_height="fill"Â 
+Â  }
+items={" right option name to show"}
+dlg=LuaDialog(this)
+dlg.View=loadlayout(layout)
+grid.adapter=SingleLineAdapter(service, String(items))
+dlg.setTitle(" right title to view")
+dlg.setMessage(" write message to view")
+dlg.setButton(" right button name to view for example clothes and cancel thisÂ  button work go back orÂ  close", nil)
+dlg.show()
+grid.onItemClick=function(l,v)
+dlg.dismiss()
+task(500, function()
+if v.text == "Enter the name you gave above for the button to display above. Any button.." then Set what the button should do after pressing it..
+elseif v.text == "Enter the name you gave above for the button to display above. Any button. continue with same process" then Set what the button should do after pressing it continue with same process
+return true
+end
+end)
+end
+service.playSoundScroll()
+Â this sintex give you change navigation tile sound
+service.beep()
+this sintex give you reaching last element soundà¥¤
+A value is given between both the left parenthesis and the right parenthesis The value is the number of times the sound is playedÂ  and this work in play sound all syntax The value is given in digits
+service.setLongClickTime(give durationà¥¤ to set while long press)
+require "import"
+import "android.content.Intent"
+import "android.content.pm.PackageManager"
+import "android.net.Uri"
+import "java.io.File"
+function openDownloadFolder()
+Â  Â  local folderPath = "right path to open folder example pathà¥¤ /storage/emulated/0/Download"
+Â  Â  local folderUri = Uri.parse(folderPath)
+-- Create an attempt to open the directory.
+Â  Â  local intent = Intent(Intent.ACTION_VIEW)
+Â  Â  intent.setDataAndType(folderUri, "resource/folder")Â  Â Â 
+intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+Â  Â  if intent.resolveActivity(service.getPackageManager()) then
+Â  Â  Â  Â  service.startActivity(intent)
+Â  Â  else
+service.asyncSpeak("No application found to open the folder.")
+Â  Â  end
+end
+openDownloadFolder()
+return true
+require "import"
+import "android.speech.RecognizerIntent"
+import "android.speech.SpeechRecognizer"
+import "android.speech.RecognitionListener"
+import "android.content.Intent"
+import "android.net.Uri"
+
+if not service.getEditText() then
+Â  Â  service.asyncSpeak("Text Box Not Found!")
+Â  Â  return false
+end
+
+local spokenLanguageBysurya = "hi-IN"
+local translatedLanguageBysurya = "en"
+local autoPunctuationBysurya = ".Â 
+"
+local recordIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+recordIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+recordIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, spokenLanguageBysurya)
+local speechRecord = SpeechRecognizer.createSpeechRecognizer(service)
+speechRecord.setRecognitionListener{
+Â  Â  onResults = function(results)
+Â  Â  Â  Â  local spokenText = results.getParcelableArrayList(SpeechRecognizer.RESULTS_RECOGNITION).get(0)
+
+Â  Â  Â  Â  Http.get("https://translate.google.com/m?sl=auto&hl=" .. translatedLanguageBysurya .. "&q=" .. Uri.encode(spokenText), function(status, result)
+Â  Â  Â  Â  Â  Â  if status == 200 then
+Â  Â  Â  Â  Â  Â  Â  Â  local translatedText = result:match('<div class="result%-container">([^<]+)</div>')
+Â  Â  Â  Â  Â  Â  Â  Â  service.insertText(service.getEditText(), translatedText .. autoPunctuationBysurya)
+Â  Â  Â  Â  Â  Â  Â  Â  service.speak(translatedText)
+Â  Â  Â  Â  Â  Â  end
+Â  Â  Â  Â  end)
+Â  Â  Â  Â  speechRecord.destroy()
+Â  Â  end,
+Â  Â  onError = function()
+Â  Â  Â  Â  speechRecord.destroy()
+Â  Â  Â  Â  service.asyncSpeak("I Did Not Understand Your Message!")
+Â  Â  end
+}
+
+speechRecord.startListening(recordIntent)
+require "import"
+import "android.speech.RecognizerIntent"
+import "android.speech.SpeechRecognizer"
+import "android.speech.RecognitionListener"
+import "android.content.Intent"
+
+if not service.getEditText() then
+service.asyncSpeak("Text Box Not Found!")
+return false
+end
+
+local typingLanguageBysurya = "en-US"
+local autoPunctuationBysurya = ".
+Â "
+local recordIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+recordIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+recordIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageBysurya)
+
+local speechRecord = SpeechRecognizer.createSpeechRecognizer(service)
+speechRecord.setRecognitionListener{
+onResults = function(results)
+local spokenText = results.getParcelableArrayList(SpeechRecognizer.RESULTS_RECOGNITION).get(0)
+service.insertText(service.getEditText(), spokenText .. autoPunctuationBysurya)
+service.speak(spokenText)
+speechRecord.destroy()
+end,
+onError = function()
+speechRecord.destroy()
+service.asyncSpeak("I Did Not Understand Your Message!")
+end
+}
+
+speechRecord.startListening(recordIntent)
+require "import"
+import "android.content.Intent"
+import "android.speech.SpeechRecognizer"
+import "android.speech.RecognitionListener"
+import "android.speech.RecognizerIntent"
+local editText = service.getEditText()
+if not editText then
+service.asyncSpeak("Text Box Not Found")
+return
+end
+local context = service.getApplicationContext()
+local speechRec = SpeechRecognizer.createSpeechRecognizer(context)
+local changeTable = {
+["table"] = "table",
+}
+
+local listener = RecognitionListener {
+onResults = function(results)
+local resultsArray = results.getParcelableArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+if resultsArray and resultsArray.size() > 0 then
+local spokenText = resultsArray.get(0)
+for rawWord, newWord in pairs(changeTable) do
+spokenText = spokenText:gsub(rawWord, newWord)
+end
+spokenText = spokenText:gsub("%s([?,!])", "%1") -- Trim spaces before specific punctuation
+local lastChars = spokenText:match("[.?!,à¥¤
+ðŸ‘â¤ðŸ™ðŸ‘Œ%s]+$") -- Find the last characters that match the pattern
+if not lastChars then
+spokenText = spokenText .. ".Â 
+"
+end
+service.insertText(editText, spokenText)
+service.speak(spokenText)
+end
+speechRec.destroy()
+end,
+onError = function()
+service.asyncSpeak("I did not understand your message")
+speechRec.destroy()
+return false
+end,
+}
+local intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "right language code to typing")
+speechRec.setRecognitionListener(listener)
+speechRec.startListening(intent)
+require 'import'
+import "android.content.*"
+local intent = Intent()
+.setComponent(ComponentName("com.android.settings", "com.android.settings.Settings$right setting name to open exampleà¥¤ WifiSettingsActivity"))
+service.startActivity(intent)
+Node = ...
+service.postExecute( give value in milliseconds for weight, "write your name", node, function() use function Or any service("Â  right or pest text") end)
+require "import"
+import "android.content.Intent"
+import "android.net.Uri"
+local url = "pest specific application link to open in specific application "
+local intent = Intent(Intent.ACTION_VIEW)Â 
+intent.setData(Uri.parse(url))
+this.startActivity( intent)
+return true
+if
+service.click({
+{"write option to click ",
+continue with same process option writing completed }
+})return true
+end
+if
+service.click({
+{"write option to click ",
+continue with same process option writing completed }
+})
+Â use any service to create
+return true
+end
+return true
+welcome to symbols with description
+insert tools %tools/Â  tool name
+insert extensions %plugins/ extension name
+insert developer functions %Â  functione name
+second work of %Â  open csr main screen optionÂ  for example tts settings feedback settings
+@ this sign works for click on specific option inÂ  specific application
+first work of *Â  ignore textÂ  pest option and give sign and erase extra details description
+second work of *Â  highlight option pest option between2 *Â  to clickÂ  and highlight
+vertical line It is placed between two options and its job is to click on whichever option appears first..
+$Â  thisÂ  sign works for increaseÂ  and decreaseextension speedÂ  option name this sign and value in milliseconds
+first work of #Â  click on i d button Everyone is different i dÂ  You go to the main menu and go to more two times You can see in node properties Where shows the package name of the application i dÂ  Next to the package name Some applications don't have button i d like Telegram for example
+second work of #Â  click on toggle button give the sign and paste toggle button to click
+third work of #Â  in one window same name two plus optionÂ  type option name and the signÂ  and type value for exampleÂ  you are click on first option type 1Â  you are click on second option type 2
+insert application >Â  application name
+second work of >Â  decrease extension speed give the sign and value in seconds to wait
+first work of<Â  move focus to option give the sign and option name
+second work of < pest optionÂ  and function give this sign and value to repeat
+csr built and commands
+Profiles
+Extensions
+Tools
+Main menu
+Recognition menu
+Current per-app gestures menu
+Functions menu
+Screen reader settings
+Enable logging
+Gesture scheme description
+Suspend browse by touch
+Suspend speech feedback and browse by touch
+Disable hotkeys
+Lock touch
+Enable curtain
+Suspend edge gestures
+Suspend main TTS engine
+Suspend secondary TTS engine
+Earpiece mode
+Toggle multi-finger gestures
+Select TTS engine
+Switch the currently used TTS engine
+Increase accessibility volume
+Decrease accessibility volume
+Increase speech rate
+Decrease speech rate
+Increase media volume
+Decrease media volume
+Voice assistant
+Voice dictation
+Actions
+Open an URL
+Monitor the currently focused element
+Focus monitor manager
+Edit dictionary
+Edit node alias
+Add content blacklist
+Spell current focus
+Granular browsing mode
+Edit current Per-App gesture scheme
+Automatic translation
+Recognize subtitles
+Automatically use OCR
+Virtual screen
+Identify form
+Recognize text on the current screen
+Recognize text of the current focused element
+Get CAPTCHA
+Translation
+Jieshuo Camera
+Current time
+Timer
+Pause timer
+Current location
+Speak current lighting
+Speak time and battery level
+Speak network information
+Play or pause
+Previous media
+Next media
+Clipboard history
+Favorites
+Paste
+Copy
+Append
+List copying
+Clear
+Granular editing mode
+edit current text
+Full text selection
+Recent applications
+Home screen
+Go back
+Notification bar
+Quick settings
+Take a screenshot
+Screen lock
+Power menu
+Split screen view
+Notification box
+Click
+Long press
+Direct click
+Direct long press
+[Double tap]
+Direct swipe left
+Direct swipe right
+Direct swipe up
+direct swipe down
+Virtual navigation
+Character by character browsing mode
+List browsing
+Full text editing
+Node browsing mode
+Read the whole screen
+Enhanced detailed focusing mode
+Passthrough mode
+Lift to activate
+Tapping to move focus mode
+Reading mode
+Automatic browsing
+Backwards automatic browsing
+Input
+Change input method
+Read all notifications
+Left shortcut
+Right shortcut
+To top
+To end
+Select navigation type
+Previous navigation type
+Next navigation type
+Previous element of the specified type
+Next element of the specified type
+Previous screen area
+Next screen area
+Previous focusable element
+Next focusable element
+Scroll back
+Scroll forward
+Decrease slider value
+Increase slider value
+Previous heading
+Next heading
+Previous link
+Next link
+Previous control
+Next control
+Previous character
+Next character
+Previous word
+Next word
+Previous sentence
+Next sentence
+Previous paragraph
+Next paragraph
+Copy to cloud clipboard
+Paste from cloud clipboard
+Direct scroll up
+Direct scroll down
+Direct scroll left
+Direct scroll right
+Fast forward
+Rewind
+Selection mode
+Describe currently focused item
+Describe entire screen
+Detailed description of focused item
+Detailed description of entire screen
+Automatically read chat messages
+Automatic chat messages history
+Quick browsing
+Answer call
+End call
+Suspend the use of accessibility volume
+Chat history
+Long press and hold
+Recognize the focused icon
+Inquire by voice about current focus
+Inquire by Voice About the Entire Screen
+Video description
+Show all nodes
+Focus menu
+Take a screenshot of current focus
+continuous voice dictation
+Suspend screen reader gestures
+Jieshuo Activities
+Search activities...
+Number of items: 74
+com.nirenr.talkman.TalkManActivity
+com.androlua.Main
+com.androlua.LuaActivity
+com.androlua.LuaActivityX
+com.nirenr.talkman.WebActivity
+com.nirenr.talkman.VoiceHelperActivity
+com.nirenr.talkman.HelpActivity
+com.nirenr.talkman.VoiceHelperHelpActivity
+com.nirenr.talkman.settings.VoiceSetting
+com.nirenr.talkman.settings.FeedBackSetting
+com.nirenr.talkman.settings.ActionSetting
+com.nirenr.talkman.settings.ContentSetting
+com.nirenr.talkman.settings.NotificationSetting
+com.nirenr.talkman.settings.AdvancedSetting
+com.nirenr.talkman.settings.HelpFeedSetting
+com.nirenr.talkman.OCRActivity
+com.nirenr.talkman.CameraActivity
+com.nirenr.talkman.ToolActivity
+com.nirenr.talkman.settings.ImportActivity
+com.nirenr.talkman.settings.ManagerActivity
+com.nirenr.talkman.settings.UserSetting
+com.nirenr.talkman.settings.RegActivity
+com.nirenr.talkman.settings.LoginActivity
+com.nirenr.talkman.settings.FlyTekSettings
+com.nirenr.talkman.settings.UniSoundSettings
+com.nirenr.talkman.settings.GestureManager
+com.nirenr.talkman.settings.GestureSetting
+com.nirenr.talkman.settings.GestureActivity
+com.nirenr.talkman.settings.VoiceHelperSetting
+com.nirenr.talkman.settings.TimerSetting
+com.nirenr.talkman.PictureInPictureActivity
+com.nirenr.talkman.settings.GeneralSetting
+com.nirenr.screencapture.ScreenCaptureActivity
+com.nirenr.talkman.settings.BlackListSetting
+com.nirenr.talkman.settings.StringListSetting
+com.nirenr.talkman.settings.SystemTtsSetting
+com.nirenr.talkman.settings.CommandListSetting
+com.nirenr.talkman.settings.TimerManager
+com.nirenr.talkman.settings.EchoVoiceSettings
+com.nirenr.talkman.settings.GestureEdit
+com.nirenr.talkman.settings.VoiceCmdManager
+com.nirenr.talkman.settings.VoiceCmdShare
+com.nirenr.talkman.settings.GestureFileManager
+com.nirenr.talkman.settings.FileEdit
+com.nirenr.talkman.DownloadActivity
+com.nirenr.talkman.RequestPermissionsActivity
+com.nirenr.talkman.settings.CloudNote
+com.nirenr.talkman.settings.TimerRun
+com.nirenr.talkman.settings.GestureFileShare
+com.nirenr.talkman.settings.SoundSetting
+com.nirenr.talkman.SetupActivity
+com.androlua.LuaEditActivity
+com.nirenr.talkman.PluginActivity
+com.nirenr.talkman.settings.JSONSetting
+com.nirenr.talkman.ReaderActivity
+com.nirenr.talkman.settings.SoundManager
+com.nirenr.talkman.settings.HotKeySetting
+com.nirenr.talkman.settings.HotKeyManager
+com.nirenr.talkman.settings.GithubActivity
+com.nirenr.talkman.settings.RePasswordActivity
+com.nirenr.talkman.settings.ActivatedActivity
+com.nirenr.talkman.settings.HotKeyShortcutSetting
+com.nirenr.talkman.AlbumActivity
+com.nirenr.talkman.EmptyActivity
+com.nirenr.talkman.TalkManSetting
+com.nirenr.talkman.settings.MainTtsSetting
+com.nirenr.talkman.settings.AsyncTtsSetting
+com.nirenr.talkman.CameraActivity2
+com.androlua.LuaWallpaperSetting
+com.nirenr.talkman.settings.LabelSetting
+com.nirenr.talkman.settings.TimerTtsSetting
+com.nirenr.talkman.settings.LanguageSetting
+com.nirenr.talkman.settings.VoiceSupperCmdManager
+com.nirenr.talkman.settings.ChatActivity
+GO
+Jieshuo Services:
+Number of items: 982
+service.acceptCall
+service.acceptRingingCall
+service.accessibilityFocus
+service.accessibilityFocus2
+service.addAutoSpeakCache
+service.addClipboard
+service.addContentBlacklist
+service.addFavorites
+service.addNodeChangedList
+service.addNotificationMap
+service.addTimer
+service.allStop
+service.announcementNotificationBox
+service.appendCopy
+service.appendSpeak
+service.appendSpeak2
+service.asyncAppendSpeak
+service.asyncGetAllApp
+service.asyncSpeak
+service.asyncStop
+service.asyncTrans
+service.attach
+service.attachAccessibilityOverlayToDisplay
+service.attachAccessibilityOverlayToWindow
+service.beep
+service.bindIsolatedService
+service.bindService
+service.bindServiceAsUser
+service.call
+service.callPhone
+service.canAddLabel
+service.cancelAll
+service.check
+service.checkAction
+service.checkBlackList
+service.checkBound2
+service.checkBound3
+service.checkBound4
+service.checkCallingOrSelfPermission
+service.checkCallingOrSelfUriPermission
+service.checkCallingOrSelfUriPermissions
+service.checkCallingPermission
+service.checkCallingUriPermission
+service.checkCallingUriPermissions
+service.checkClassName
+service.checkCmdPath
+service.checkContentUriPermissionFull
+service.checkGoogleNumber
+service.checkId
+service.checkId2
+service.checkNetwork
+service.checkNetworkWiFi
+service.checkNode
+service.checkNumber
+service.checkOneNode
+service.checkPackageName
+service.checkParent
+service.checkPermission
+service.checkPluginPath
+service.checkSamsungNumber
+service.checkSelfPermission
+service.checkTalkback
+service.checkToolPath
+service.checkUriPermission
+service.checkUriPermissions
+service.checkWeixinVer
+service.clear
+service.clearAccessibilityFocus
+service.clearCache
+service.clearCachedSubtree
+service.clearLuaCache
+service.clearStatInfo
+service.clearWallpaper
+service.click
+service.click2
+service.click3
+service.cmd
+service.colorClick
+service.commitText
+service.copy
+service.create
+service.createApplicationContext
+service.createAttributionContext
+service.createConfigurationContext
+service.createContext
+service.createContextAsUser
+service.createContextForSplit
+service.createCredentialProtectedStorageContext
+service.createDeviceContext
+service.createDeviceProtectedStorageContext
+service.createDialog
+service.createDisplayContext
+service.createFeatureContext
+service.createPackageContext
+service.createPackageContextAsUser
+service.createShortcut
+service.createWindowContext
+service.databaseList
+service.deleteApp
+service.deleteDatabase
+service.deleteFile
+service.deleteSharedPreferences
+service.destroy
+service.deviceHasNavigationBar
+service.disableSelf
+service.dispatchGesture
+service.doAsset
+service.doBooleanFile
+service.doBooleanFunction
+service.doCmd
+service.doFile
+service.doGestureFile
+service.doString
+service.doubleClick
+service.doubleSwipe
+service.down
+service.downPage
+service.editDict
+service.editNodeInfo
+service.editNodeName
+service.endCall
+service.endRingingCall
+service.enforceCallingOrSelfPermission
+service.enforceCallingOrSelfUriPermission
+service.enforceCallingPermission
+service.enforceCallingUriPermission
+service.enforcePermission
+service.enforceUriPermission
+service.equals
+service.execute
+service.execute_action
+service.fileList
+service.findAccessibilityNodeInfo
+service.findAccessibilityNodeInfoByPinyin
+service.findAccessibilityNodeInfoByText
+service.findCheckView
+service.findClick
+service.findFocus
+service.findFocusView
+service.findListView
+service.findView
+service.focusHtml
+service.focusSound
+service.getAccessibilityButtonController
+service.getAlarmInterval
+service.getAllAppList
+service.getAllEditTextList
+service.getAllText
+service.getAllTextList
+service.getAllTextSplitList
+service.getAppName
+service.getAppNameAndVer
+service.getApplication
+service.getApplicationContext
+service.getApplicationInfo
+service.getAssets
+service.getAttributionSource
+service.getAttributionTag
+service.getAudioMode
+service.getAutoSpeakBlacklist
+service.getBaseContext
+service.getBasePackageName
+service.getBatteryLevel
+service.getBrailleDisplayController
+service.getButton1
+service.getButton2
+service.getCacheDir
+service.getClass
+service.getClassLoader
+service.getClassLoaders
+service.getClickList
+service.getClipboardList
+service.getCloudNodeInfoLabel
+service.getCodeCacheDir
+service.getColor
+service.getColorStateList
+service.getContentResolver
+service.getContext
+service.getCustomActions
+service.getDataDir
+service.getDatabasePath
+service.getDensity
+service.getDescriptionFromConfig
+service.getDeviceId
+service.getDir
+service.getDisplay
+service.getDisplayHeight
+service.getDisplayWidth
+service.getDrawable
+service.getEdgeGestures
+service.getEditText
+service.getEventCount
+service.getEventFunc
+service.getEventText
+service.getEventTime
+service.getExtActions
+service.getExternalCacheDir
+service.getExternalCacheDirs
+service.getExternalFilesDir
+service.getExternalFilesDirs
+service.getExternalMediaDirs
+service.getFavoritesList
+service.getFeatureId
+service.getFileName
+service.getFileStreamPath
+service.getFilesDir
+service.getFingerprintGestureController
+service.getFocusView
+service.getForegroundServiceType
+service.getGestureCount
+service.getGesturePackage
+service.getGestureTime
+service.getGlobalData
+service.getHandler
+service.getHeight
+service.getHintText
+service.getHoverCount
+service.getHoverTime
+service.getIndexLabel
+service.getIndexLabel2
+service.getInputMethod
+service.getInputMethodManager
+service.getInputWindowNode
+service.getInstance
+service.getLastEdittext
+service.getLastScrollIndex
+service.getLastSetFocusViewTime
+service.getLastSpeakText
+service.getLeftButton
+service.getLibrarys
+service.getLight
+service.getListView
+service.getListView2
+service.getListViewItem
+service.getLuaCpath
+service.getLuaDir
+service.getLuaExtDir
+service.getLuaExtPath
+service.getLuaLpath
+service.getLuaPath
+service.getLuaState
+service.getMagnificationController
+service.getMainExecutor
+service.getMainLooper
+service.getMessage
+service.getMobileLevel
+service.getMode
+service.getNextChapterKeyword
+service.getNoBackupFilesDir
+service.getNodeIndexId
+service.getNodeIndexId2
+service.getNodeInfoLabel
+service.getNodeInfoLabelExt
+service.getNodeInfoResId
+service.getNodeInfoText
+service.getNodeTree
+service.getNowTime
+service.getObbDir
+service.getObbDirs
+service.getOpPackageName
+service.getOrientation
+service.getPackageCodePath
+service.getPackageManager
+service.getPackageName
+service.getPackageResourcePath
+service.getParams
+service.getPreloadsFileCache
+service.getPreviousChapterKeyword
+service.getRawMode
+service.getRawNodeInfoText
+service.getRawNodeInfoText2
+service.getRawNodeInfoText3
+service.getRawSpeakSourceText
+service.getRecordNode
+service.getResources
+service.getRightButton
+service.getRoleDescription
+service.getRootInActiveWindow
+service.getRootNode
+service.getRootNodeInfo
+service.getScreenShot
+service.getScreenShot2
+service.getSelectionEnd
+service.getSelectionStart
+service.getSelectionText
+service.getService
+service.getServiceInfo
+service.getSharedData
+service.getSharedPreferences
+service.getSharedPreferencesPath
+service.getSharedPrefsFile
+service.getSoftKeyboardController
+service.getSourceText
+service.getSpeakSourceText
+service.getSpeechRecognizer
+service.getStatusBarHeight
+service.getStatusBarWindowHeight
+service.getStreamVolume
+service.getString
+service.getSystemActions
+service.getSystemService
+service.getSystemServiceName
+service.getTTS
+service.getText
+service.getText3
+service.getText4
+service.getTextFormatter
+service.getTextMove
+service.getTheme
+service.getThemeResId
+service.getTimerInterval
+service.getTimerModePauseTime
+service.getTimerTags
+service.getTouchExpCount
+service.getTouchExpTime
+service.getTouchInteractionController
+service.getTtsScale
+service.getUriForFile
+service.getUriForPath
+service.getUserId
+service.getUserName
+service.getVibrateIntensity
+service.getViewIdResourceName
+service.getViewName
+service.getViewName2
+service.getWallpaper
+service.getWallpaperDesiredMinimumHeight
+service.getWallpaperDesiredMinimumWidth
+service.getWebAllText
+service.getWebAllTextList
+service.getWebScrollView
+service.getWidth
+service.getWifiLevel
+service.getWindows
+service.getWindowsOnAllDisplays
+service.getWtNode
+service.getWxNode
+service.grantUriPermission
+service.hasChildNodeInfoAllClick
+service.hasChildNodeInfoClick
+service.hasChildNodeInfoNoneClick
+service.hasChildNodeInfoText
+service.hasChildNodeInfoTextAux
+service.hasClickSpan
+service.hasNavigationBar
+service.hasNodeInfoText
+service.hashCode
+service.init
+service.insert
+service.insertText
+service.installApk
+service.installApp
+service.isAccessibilityFocusable
+service.isAccessibilityVolume
+service.isAsyncSpeakEnabled
+service.isAsyncUseProixmitySensor
+service.isAutoEnabled
+service.isAutoNext
+service.isAutoPrevious
+service.isAutoRead
+service.isAutoReadEnabled
+service.isAutoSpeech
+service.isAutoSpeechEnabled
+service.isAutoTrans
+service.isBatteryConnected
+service.isCN
+service.isCacheEnabled
+service.isCharMode
+service.isCharModeGesture
+service.isClickable
+service.isCredentialProtectedStorage
+service.isDebug
+service.isDeviceProtectedStorage
+service.isDimmed
+service.isEditMode
+service.isEditView
+service.isEditable
+service.isEnabled
+service.isInCalling
+service.isInInputWindow
+service.isInListView
+service.isInLongSpeak
+service.isInScrollView
+service.isInWebView
+service.isInWebView2
+service.isIncallMode
+service.isInputWindowOnScreen
+service.isLandscape
+service.isListView
+service.isListView2
+service.isLoad
+service.isLock
+service.isLongCopy
+service.isMenuUpTap
+service.isNear
+service.isNodeInCache
+service.isNoneFocusView
+service.isOcring
+service.isPartialWakeLock
+service.isPauseGesture
+service.isQuickView
+service.isRawClick
+service.isRestricted
+service.isRingMode
+service.isRinging
+service.isScreenOn
+service.isScrollView
+service.isSeekBar
+service.isSelectionMode
+service.isShowIME
+service.isShowInputWindow
+service.isSpeakListViewItem
+service.isSpeaking
+service.isSpeaking2
+service.isSpeeching
+service.isSupperMode
+service.isTTSEnabled
+service.isTapMode
+service.isTatansIme
+service.isTimerMode
+service.isTouch
+service.isTouchMode
+service.isUiContext
+service.isUpTap
+service.isUpTapEnabled
+service.isUseAccessibilityVolume
+service.isUseAccessibilityVolumeFix
+service.isUseAlarm
+service.isUseAsyncAccessibilityVolume
+service.isUseCloudLabel
+service.isUseDpadKey
+service.isUseEdgeGesture
+service.isUseFastMode
+service.isUseFloatMenu
+service.isUseForeground
+service.isUseHotkey
+service.isUseImageToText
+service.isUseKeepType
+service.isUseLoopMove
+service.isUseLoopMoveSpace
+service.isUseMoreNode
+service.isUseMoveListViewItem
+service.isUseMoveWindow
+service.isUseNewWebMove
+service.isUseNode
+service.isUseOCR
+service.isUseOldPrevious
+service.isUseProixmitySensor
+service.isUseProximityFalseTouchPrevention
+service.isUseRawClick
+service.isUseRawTap
+service.isUseScrollListContent
+service.isUseScrollListIndex
+service.isUseShowDisabledQuickMenu
+service.isUseSingleTTS
+service.isUseSlowSpeed
+service.isUseTextFormatCharUpper
+service.isUseTextFormatFirst
+service.isUseTextFormatReadWord
+service.isUseUseTextFormatCharNumber
+service.isUseViewMove
+service.isUseViewTypeMoveMode
+service.isUseVolumeKeyEnabled
+service.isUseWebMove
+service.isVoiceInputAppendMode
+service.isVolumeKeyEnabled
+service.isWakeLock
+service.isWebView
+service.isWindowStateChanged
+service.keyLock
+service.left
+service.leftPage
+service.loadAllTimerRun
+service.loadAutoSpeakBlacklist
+service.loadContentBlacklist
+service.loadDex
+service.loadGesturePackage
+service.loadHotKey
+service.loadHotKeyPackage
+service.loadNotificationBlackList
+service.loadNotificationWhiteList
+service.loadSound
+service.loadSoundPackage
+service.lock
+service.longClick
+service.longCopy
+service.longHold
+service.loopClick
+service.lowerVolume
+service.lowerVolume2
+service.moveDatabaseFrom
+service.moveSharedPreferencesFrom
+service.navigation
+service.newActivity
+service.newTask
+service.newThread
+service.newTimer
+service.nextAlarm
+service.nextRun
+service.nextTimer
+service.nodeChangedListManager
+service.noneFocus
+service.noneFocusView
+service.notificationBox
+service.notify
+service.notifyAll
+service.obtainStyledAttributes
+service.ocr
+service.ocrClick
+service.ocrScreen
+service.ocrScreen2
+service.ocrToLayout2
+service.onASREnd
+service.onASRStart
+service.onASRStop
+service.onAccessibilityEvent
+service.onAsyncSpeak
+service.onAsyncSpeak2
+service.onBind
+service.onConfigurationChanged
+service.onCreate
+service.onCreateInputMethod
+service.onDestroy
+service.onGesture
+service.onInterrupt
+service.onKeyEvent
+service.onLockedBootCompleted
+service.onLowMemory
+service.onMotionEvent
+service.onNotificationBar
+service.onRebind
+service.onScreenOn
+service.onScreenOn2
+service.onServiceConnected
+service.onSpeak
+service.onSpeak2
+service.onStart
+service.onStartCommand
+service.onSystemActionsChanged
+service.onTTSEnd
+service.onTTSStart
+service.onTTSStop
+service.onTaskRemoved
+service.onTimeout
+service.onToast
+service.onTrimMemory
+service.onUnbind
+service.onUnlockedBootCompleted
+service.openActivity
+service.openFileInput
+service.openFileOutput
+service.openOrCreateDatabase
+service.openUrl
+service.paste
+service.pasteText
+service.pauseTouchMode
+service.peekWallpaper
+service.performGlobalAction
+service.play
+service.playSoundClock
+service.playSoundGestureBegin
+service.playSoundGestureEnd
+service.playSoundScroll
+service.playSoundTick
+service.plugin
+service.postClick
+service.postExecute
+service.postSpeak
+service.press
+service.print
+service.raiseVolume
+service.raiseVolume2
+service.rawClick
+service.rawDoubleClick
+service.rawSpeak
+service.reAccessibilityFocus
+service.reCreate
+service.reLoad
+service.reLoadTTS
+service.reSize
+service.readAsset
+service.regEvent
+service.regGc
+service.registerComponentCallbacks
+service.registerDeviceIdChangeListener
+service.registerReceiver
+service.registerReceiverAsUser
+service.registerReceiverForAllUsers
+service.removeStickyBroadcast
+service.removeStickyBroadcastAsUser
+service.requestPermissions
+service.resetStreamVolume
+service.revokeSelfPermissionOnKill
+service.revokeSelfPermissionsOnKill
+service.revokeUriPermission
+service.right
+service.rightPage
+service.scrollBackward
+service.scrollBackwardFind
+service.scrollForward
+service.scrollForwardFind
+service.select
+service.sendBroadcast
+service.sendBroadcastAsUser
+service.sendBroadcastMultiplePermissions
+service.sendBroadcastWithMultiplePermissions
+service.sendError
+service.sendKey
+service.sendKeyEvent
+service.sendMsg
+service.sendOrderedBroadcast
+service.sendOrderedBroadcastAsUser
+service.sendStickyBroadcast
+service.sendStickyBroadcastAsUser
+service.sendStickyOrderedBroadcast
+service.sendStickyOrderedBroadcastAsUser
+service.sendText
+service.set
+service.setAccessibilityFocus
+service.setAccessibilityFocus2
+service.setAccessibilityFocusAppearance
+service.setAccessibilityVolume
+service.setAcquireWakeLock
+service.setAlarmEndHour
+service.setAlarmHours
+service.setAlarmInterval
+service.setAlarmStartHour
+service.setAnimationScale
+service.setAsyncAudioFocus
+service.setAsyncSpeakEnabled
+service.setAsyncTTSSpeed
+service.setAsyncTTSVolume
+service.setAsyncTtsEngine
+service.setAsyncTtsPitch
+service.setAsyncTtsScale
+service.setAsyncUseAccessibilityVolume
+service.setAsyncUseProixmitySensor
+service.setAsyncUseTouchStop
+service.setAsyncUseWakeLock
+service.setAudioFocus
+service.setAutoNext
+service.setAutoPrevious
+service.setAutoRead
+service.setAutoReadEnabled
+service.setAutoShowVirtualScreen
+service.setAutoSpeak
+service.setAutoSpeakApps
+service.setAutoSpeech
+service.setAutoSpeechEnabled
+service.setAutoTrans
+service.setCacheEnabled
+service.setCharMode
+service.setCharModeGesture
+service.setClearNode
+service.setCloudNodeInfoLabel
+service.setContentBlacklist
+service.setDimmed
+service.setDimmedEnabled
+service.setDoubleFling
+service.setDoubleFlingTime
+service.setEdgeGesture
+service.setEdgeGestureWidth
+service.setEnabled
+service.setFalseTouchPrevention
+service.setFalseTouchPreventionEnabled
+service.setFocusView
+service.setForeground
+service.setForeground2
+service.setGameMode
+service.setGameModeList
+service.setGestureDetectionPassthroughRegion
+service.setIncallMode
+service.setInputMode
+service.setKeepFocusPosition
+service.setLeftButton
+service.setLongClickTime
+service.setLongCopy
+service.setLuaExtDir
+service.setMenuUpTap
+service.setModeAudio
+service.setNaviUpTap
+service.setNodeLabel
+service.setNotificationAnnouncementSpeak
+service.setNotificationAppNameSpeak
+service.setNotificationBarSpeak
+service.setNotificationBlackList
+service.setNotificationInAutoReadNoSpeak
+service.setNotificationInCallNoSpeak
+service.setNotificationInTouchNoSpeak
+service.setNotificationSpeak
+service.setNotificationSummary
+service.setNotificationToastSpeak
+service.setNotificationWhiteList
+service.setOnAccessibilityFocusedListener
+service.setOnScrolledListener
+service.setOnlyNotification
+service.setPartialWakeLock
+service.setPauseGesture
+service.setProfiles
+service.setRightButton
+service.setScreenOffSpeak
+service.setSelection
+service.setSelectionMode
+service.setSensor
+service.setServiceInfo
+service.setSharedData
+service.setSingleTap
+service.setSound
+service.setSoundVolume
+service.setSpeakListViewItem
+service.setSpeaking
+service.setSpeechRecognitionListener
+service.setSpeeching
+service.setStreamVolume
+service.setSupperMode
+service.setSupperModeAux
+service.setTTSEnabled
+service.setTTSSpeaker
+service.setTTSSpeed
+service.setTTSVolume
+service.setTapMode
+service.setText
+service.setTextToSpeechListener
+service.setTheme
+service.setTimerInterval
+service.setTimerMode
+service.setTimerModeAux
+service.setTimerModePause
+service.setTouchExplorationMode
+service.setTouchExplorationModeRunnable
+service.setTouchExplorationPassthroughRegion
+service.setTouchMode
+service.setTtsEngine
+service.setTtsPitch
+service.setTtsScale
+service.setUnknownIndex
+service.setUnknownLabel
+service.setUpTap
+service.setUpTapEnabled
+service.setUsageHints
+service.setUseAccessibilityVolume
+service.setUseAccessibilityVolumeFix
+service.setUseAlarm
+service.setUseAppTTS
+service.setUseAutoFocus
+service.setUseBottomMenuEdgeGesture
+service.setUseCloudLabel
+service.setUseContentChanged
+service.setUseContentTreeChanged
+service.setUseCustomDictRegex
+service.setUseCustomDictSpeak
+service.setUseCustomNodeName
+service.setUseCustomSpeakClear
+service.setUseCustomSpeakSymbolNumber
+service.setUseCustomSymbolSpeak
+service.setUseDpadKey
+service.setUseEdgeGesture
+service.setUseEditHint
+service.setUseEmojiSpeak
+service.setUseEmojiSpeakClear
+service.setUseFastMode
+service.setUseFingerprintGesture
+service.setUseFloatMenu
+service.setUseForeground
+service.setUseForegroundPro
+service.setUseGameModeNoEdge
+service.setUseGameModeNoSpeak
+service.setUseHeadSetKey
+service.setUseHotkey
+service.setUseImageFilter
+service.setUseImageToText
+service.setUseInputMethodDoubleTap
+service.setUseInputMethodGesture
+service.setUseInputMethodNoTouch
+service.setUseInputMethodSpeakCandidate
+service.setUseInputMethodSpeakCommit
+service.setUseInputMethodSpeakCommitSpace
+service.setUseInputMethodSpeakKey
+service.setUseInputMethodSpeakPassword
+service.setUseInputMethodSpeakWord
+service.setUseKeepType
+service.setUseLeftRight
+service.setUseListIndex
+service.setUseListItemIndex
+service.setUseListItemIndexRealTime
+service.setUseLog
+service.setUseLongClickVoiceImage
+service.setUseLongClickVoiceInput
+service.setUseLoopMove
+service.setUseLoopMoveSpace
+service.setUseMoreNode
+service.setUseMoveListViewItem
+service.setUseMoveWindow
+service.setUseMultiTouchMode
+service.setUseNavigationGesture
+service.setUseNewTextMoveType
+service.setUseNewWebMove
+service.setUseNoBluetooth
+service.setUseNode
+service.setUseNodeInfo
+service.setUseOCR
+service.setUseOfflineTTS
+service.setUseOldPrevious
+service.setUsePagerScroll
+service.setUsePinyinSpeak
+service.setUsePowerSave
+service.setUseProgress
+service.setUseProixmitySensor
+service.setUseProximityFalseTouchPrevention
+service.setUseProximityFalseTouchPreventionOnlyLock
+service.setUseRawClick
+service.setUseRawTap
+service.setUseRingtoneVolume
+service.setUseScreenOffSpeak
+service.setUseScreenOnSpeak
+service.setUseScreenOnSpeakBattery
+service.setUseScreenOnSpeakNotification
+service.setUseScrollListContent
+service.setUseScrollListIndex
+service.setUseScrollListKeepPosition
+service.setUseShowDisabledQuickMenu
+service.setUseShowText
+service.setUseSingleTTS
+service.setUseSlowSpeed
+service.setUseSmallFilter
+service.setUseSpeakKey
+service.setUseSpeakQqChanged
+service.setUseSpeakState
+service.setUseSpeakWindowAllChanged
+service.setUseSupperFilter
+service.setUseTextFormatCharNumber
+service.setUseTextFormatCharUpper
+service.setUseTextFormatFirst
+service.setUseTextFormatReadWord
+service.setUseTouchMode
+service.setUseTouchStop
+service.setUseUpLongClick
+service.setUseUpLongQuickMenu
+service.setUseViewMove
+service.setUseViewName
+service.setUseViewTypeMoveMode
+service.setUseVolumeKeyEnabled
+service.setUseVolumeKeyMoveText
+service.setUseWakeLock
+service.setUseWakeLockPro
+service.setUseWebMove
+service.setUseWebViewName
+service.setUseWindowTitleChanged
+service.setVibrate
+service.setVibrateIntensity
+service.setVoiceHelperMediaMuteMode
+service.setVoiceInputAppendMode
+service.setVolumeKeyEnabled
+service.setWakeLock
+service.setWakeLock_aux
+service.setWallpaper
+service.setup
+service.shareFile
+service.showAllNode
+service.showAutoSpeakCache
+service.showNodeInfo
+service.showNotificationBox
+service.showOnScreen
+service.showOnScreen2
+service.showQuickView
+service.showText2
+service.showToast
+service.showVirtualScreen
+service.showVirtualTableScreen
+service.speak
+service.speakAllNotification
+service.speakAllText
+service.speakLight
+service.speakNetInfo
+service.speakNowTime
+service.speakOnScreen
+service.speakSourceText
+service.speakTime
+service.speakTimeInfo
+service.speakTimer
+service.speak_aux
+service.splitRow
+service.splitRow2
+service.splitRow3
+service.splitSpeak
+service.startActivities
+service.startActivity
+service.startActivityAsUser
+service.startActivityForResult
+service.startApp
+service.startApp2
+service.startAppExtend
+service.startDebug
+service.startForeground
+service.startForegroundService
+service.startInput
+service.startInputting
+service.startInstrumentation
+service.startIntentSender
+service.startListening
+service.startReadMode
+service.startService
+service.startServiceAsUser
+service.stop
+service.stopDebug
+service.stopForeground
+service.stopInputting
+service.stopSelf
+service.stopSelfResult
+service.stopService
+service.swipe
+service.swipe2
+service.takeScreenshot
+service.takeScreenshotOfWindow
+service.tap
+service.task
+service.thread
+service.ticker
+service.timer
+service.toBack
+service.toChild
+service.toClick
+service.toClick1
+service.toClick2
+service.toClick3
+service.toClick4
+service.toClick5
+service.toClick6
+service.toEnd
+service.toHeadsetHook
+service.toHome
+service.toListViewEnd
+service.toListViewStart
+service.toLockScreen
+service.toLongClick
+service.toMulti
+service.toNext
+service.toNextChar
+service.toNextLine
+service.toNextPage
+service.toNextParagraph
+service.toNextRow
+service.toNextWindow
+service.toNextWord
+service.toNotifications
+service.toParent
+service.toPinyin
+service.toPowerDialog
+service.toPrevious
+service.toPreviousChar
+service.toPreviousLine
+service.toPreviousPage
+service.toPreviousParagraph
+service.toPreviousRow
+service.toPreviousWindow
+service.toPreviousWord
+service.toQuickSettings
+service.toRawClick
+service.toRecents
+service.toSelect
+service.toSplitScreen
+service.toStart
+service.toString
+service.toTakeScreenshot
+service.toTextEnd
+service.toTextStart
+service.toastNotificationBox
+service.tool
+service.ttsSpeak
+service.unbindService
+service.unlock
+service.unregisterComponentCallbacks
+service.unregisterDeviceIdChangeListener
+service.unregisterReceiver
+service.up
+service.upPage
+service.updateServiceGroup
+service.vibrate
+service.vibrate_aux
+service.wait
+service.windowsNotificationBox
+service.youTu
+Androlua+ help
+About
+AndroLua is a lightweight scripting language tool for the Android platform developed based on LuaJava. It possesses the concise and elegant characteristics of Lua while supporting the vast majority of Android APIs, allowing you to quickly write small applications directly on your phone.
+Official QQ Group: 236938279 (Full)
+http://jq.qq.com/?_wv=1027&k=dcofRr
+Official QQ Group 2: 148389676
+http://jq.qq.com/?_wv=1027&k=2Gqxcak
+
+Project Address:
+https://github.com/nirenr/AndroLua_pro
+Click the link to support my work:
+https://qr.alipay.com/apt7ujjb4jngmu3z9a
+
+Basic Software Operations
+Project Structure
+init.lua      Project configuration file
+main.lua      Project main entry file
+layout.aly    Default layout file created by the project
+
+Menu Functions
+Triangle      Run: Execute the current project
+Left arrow    Undo: Undo the inputted content
+Right arrow   Redo: Restore the undone content
+Open          Open: Open a file; long-press in the file list to delete a file
+Recent        Recent: Show recently opened files
+
+File
+  Save: Save the current file
+  New: Create a new lua code file or aly layout file; the filenames of the code file and layout file cannot be identical
+  Compile: Compile the current file into a luac file (usually not required)
+
+Project
+  Open: Open a project from the project list
+  Pack: Compile the current project into an APK, using a debug signature by default
+  New: Create a new project
+  Export: Backup the current project as an alp file
+  Properties: Edit the properties of the current project, such as name, permissions, etc.
+
+Code
+  Format: Re-indent the current file to make it more readable
+  Import Analysis: Analyze the Java classes that need to be imported for the current file and its referenced files
+  Check Errors: Check if the current file has any syntax errors
+
+Go To
+  Search: Search for specific content locations
+  Go To: Jump by line number
+  Navigation: Jump by function
+
+Plugins: Use installed plugins
+
+Other
+  Layout Assistant: Used to design layouts when opening aly files in the editor (currently incomplete)
+  Log: View logs while the program is running
+  Java Browser: Used to view methods of Java classes
+  Manual: Offline version of the official Lua manual
+  Contact Author: Join the official QQ group to communicate with the author
+  Donate: Donate to the author via Alipay to support the software's development
+
+Quick Start
+AndroLua is a lightweight scripting tool written in Lua syntax that can utilize Android APIs to quickly develop Android applications.
+When you open the program for the first time, new.lua is created by default with the following code:
+
+ require "import"
+ import "android.widget.*"
+ import "android.view.*"
+
+ require "import" loads the import module. This module integrates many practical functions to heavily reduce the coding burden. For detailed function descriptions, refer to the program help.
+ import "android.widget.*" imports Java packages.
+ Here, the android widget and view packages are imported.
+
+ Using classes after importing them is very easy; creating a new class instance is just like calling a Lua function.
+ For example, creating a TextView:
+ tv = TextView(activity)
+ "activity" represents the context of the current active screen.
+ Similarly, creating a button: btn = Button(activity)
+
+ Setting properties for views is also very simple:
+ btn.text = "Button"
+ btn.backgroundColor = 0xff0000ff
+
+ Adding view event callback functions:
+ btn.onClick = function(v)
+   print(v)
+ end
+ The function parameter "v" is the view itself.
+
+ Android views must be added to a layout to be displayed on the activity. We commonly use LinearLayout:
+ layout = LinearLayout(activity)
+
+ Add the view using addView:
+ layout.addView(btn)
+
+ Finally, call the activity's setContentView method to display the content:
+ activity.setContentView(layout)
+ This demonstrates the basic usage of AndroLua. Usually, we need to create a new project for development, but the code usage remains identical. Please read the following sections for specific details.
+
+Differences from Standard Lua 5.3
+Enabled some compatibility options: module, unpack, bit32
+Added keywords: switch, case, default, continue
+Added keyword: when (single-line conditional judgment)
+Added keyword: defer (delayed execution)
+Added keyword: lambda (simple anonymous function)
+Added array creation syntax form: a = []
+Supports shorthand writing: then, do, and in can be omitted
+Supports using keywords as table keys
+
+Added function string.gfind: used to recursively return matching positions
+
+Added function table.clear: clears a table
+Added function table.clone: clones a table
+Added function table.const: creates a constant table that prohibits modifications
+Added function table.find: finds the key of a specified value
+Added function table.gfind: iteratively finds the key of a specified value
+Added function table.size: gets the total count of all elements in a table
+
+Added function io.readall: reads an entire file
+Added function io.ls: reads the list of file names in a folder
+Added function io.mkdir: creates a folder
+Added function io.info: gets file information
+Added function io.isdir: determines whether a path is a folder
+
+Modified function os.date: supports 64-bit time
+
+Added function tointeger: forces a numeric value to be converted into an integer
+Modified function tonumber: supports converting Java objects
+
+Differences from Standard Java
+Java has it, AndroLua does not:
+No "new" keyword; instances are built using function call syntax
+No type declarations; "local" is used to declare local variables
+Does not use {}, uses the "do end" structure
+Does not use "try", uses "pcall" and "xpcall"
+
+AndroLua has it, Java does not:
+Shorthand methods based on getter/setter
+Create lists and maps with initial content
+Access list and map content using keys
+No need to implement all methods of an interface, and simplified forms can be used
+Flexible dynamic layout
+
+1. Reference Links
+For Lua syntax and Android API, please refer to the following webpages:
+Lua Official Website:
+http://www.lua.org
+Android Chinese API:
+http://android.toolib.net/reference/packages.html
+
+2. Importing Modules
+require "import"
+This imports the import module to simplify code writing.
+Currently, the program also has built-in modules such as bmob, bson, canvas, cjson, crypt, ftp, gl, http, import, md5, smtp, socket, sensor, xml, zip, zlib, etc.
+General module import format:
+local http = require "http"
+This imports it as a local variable.
+After importing "import", you can also use the format:
+import "http"
+This imports it as a global variable.
+
+3. Importing Packages or Classes
+Before using Java classes, you need to import the corresponding package or class.
+You can import a package using the format package_name.*:
+import "android.widget.*"
+Or import a class using the full class name:
+import "android.widget.Button"
+Import an inner class:
+import "android.view.View_OnClickListener"
+Or use the inner class directly after importing the main class:
+View.OnClickListener
+Package names and class names must be enclosed in quotes.
+Imported classes are global variables. You can save them as local variables to resolve class name conflicts using this format:
+local Button = import "android.widget.Button"
+
+4. Creating Layouts and Components
+Android uses layouts and views to manage and display user interfaces.
+Layouts are responsible for managing how views are displayed. For example, LinearLayout arranges views linearly, while FrameLayout requires you to specify anchors and positions yourself.
+Views display specific content. For instance, TextView can display text content to users, and Button can respond to user click events.
+
+Create a linear layout:
+layout = LinearLayout(activity)
+Create a button view:
+button = Button(activity)
+Add the button to the layout:
+layout.addView(button)
+Set the layout as the content view of the activity:
+activity.setContentView(layout)
+
+Note: "activity" is the Context object of the current window. If you prefer, you can also use "this":
+button = Button(this)
+
+5. Using Methods
+Using Java methods is largely identical to how it is done in Java. For more details, you can search for the Android API online.
+For example:
+Setting button text:
+button.setText("Button")
+Getting button text:
+text = button.getText()
+
+getter/setter shorthand:
+When Java's getXxx/isXxx methods have no parameters, or setXxx methods have only one parameter, they can be written in shorthand:
+button.text = "Button"
+x = button.text
+
+6. Using Events
+Create an event handler function:
+function click(s)
+    print("Clicked")
+end
+Add the function to the event interface:
+listener = View.OnClickListener{onClick = click}
+Register the interface to the component:
+button.setOnClickListener(listener)
+
+Anonymous functions can also be used:
+button.setOnClickListener{onClick = function(s)
+        print("Clicked")
+    end
+}
+
+onXxx events can be shortened:
+button.onClick = function(v)
+    print(v)
+end
+
+7. Callback Methods
+(This section is empty/duplicated in source)
+
+8. Keys and Touch
+function onKeyDown(code, event)
+    print(code, event)
+end
+function onTouchEvent(event)
+    print(event)
+end
+Supports onKeyDown, onKeyUp, onKeyLongPress, onTouchEvent.
+The functions must return a boolean value.
+
+9. Using Arrays and Maps
+Arrays
+Created using the format Type{initial_content} or Type[size]. Values are retrieved and assigned using array[numeric_index].
+array = float{1, 2, 3}
+or
+array = int[10]
+a = array[0]
+array[0] = 4
+Note: Arrays use 0 as the first index.
+
+Maps
+Created using the format Type{initial_content} or Type(). Values are retrieved and assigned using map[index].
+map = HashMap()
+map.a = 1
+map[0] = 4
+
+10. Using Threads
+The import module must be loaded. Refer to the descriptions of thread, timer, and task functions.
+Threads run in an independent environment and cannot use external variables and functions. They must use parameters and callbacks to interact with the outside.
+
+Asynchronous Tasks
+task(func, args, callback)
+"func" is the task execution code or function, "args" represents parameters, and "callback" is the callback function. The task's return value will be passed to the callback function.
+"task" can only run a maximum of CPU cores x 2 threads simultaneously. Excess tasks will wait in sequence to be executed.
+There is a special format: when the first parameter is a numeric value, it will delay execution of the callback function by that value in milliseconds.
+
+Threads
+t = thread(f, args)
+"f" is the code, function, or file path to be executed in the thread; "args" represents the initial input parameters.
+Calling a method inside a thread:
+call(t, fn, args)
+"t" is the thread, "fn" is the function name, and "args" represents parameters.
+Setting a thread variable:
+set(t, fn, arg)
+"t" is the thread, "fn" is the variable name, and "arg" is the variable value.
+Thread calling a method in the main thread:
+call(fn, args)
+"fn" is the function name, and "args" represents parameters.
+Thread setting a variable in the main thread:
+set(fn, arg)
+"fn" is the variable name, and "arg" is the variable value.
+
+Note: Supported parameter types are String, Numeric, Java object, Boolean, and nil.
+Threads must use quit to terminate.
+
+Timers
+t = timer(func, delay, period, args)
+"func" is the function executed by the timer, "delay" is the timer delay, "period" is the timer interval, and "args" represents initialization parameters.
+t.enabled = false  -- Pause the timer
+t.enabled = true   -- Start the timer
+t.stop()           -- Stop the timer
+
+Note: When the timer function defines a "run" function, the timer repeatedly executes the "run" function; otherwise, it repeatedly executes the "func" function provided during construction.
+
+11. Using Layout Tables
+To use layout tables, you must import the android.view and android.widget packages.
+require "import"
+import "android.widget.*"
+import "android.view.*"
+
+Layout Table Format:
+layout = {
+    WidgetClassName,
+    id = "widgetName",
+    property = value,
+    {
+        ChildWidgetClassName,
+        id = "childWidgetName",
+        property = value,
+    }
+}
+
+Example:
+layout = {
+  LinearLayout, -- View class name
+  id = "linear", -- View ID, can be used directly after loadlayout
+  orientation = "vertical", -- Property and value
+  {
+    TextView, -- Child view class name
+    text = "hello AndroLua+", -- Property and value
+    layout_width = "fill" -- Layout property
+  },
+}
+
+Use the loadlayout function to parse the layout table and generate the layout:
+activity.setContentView(loadlayout(layout))
+It can also be simplified to:
+activity.setContentView(layout)
+If using a separate layout file (e.g., a layout.aly layout file), it can be written as shorthand:
+activity.setContentView("layout")
+In this case, you do not need to explicitly import the layout file.
+
+Layout tables support almost all Android widget properties.
+Differences from Android XML layout files:
+"id" represents the variable name in Lua, rather than Android's numeric ID used with findById.
+The "src" property of ImageView can be an image name in the current directory, an absolute file path, or an image URL from the web.
+The values of layout_width and layout_height support "fill" and "wrap" shorthands.
+The "onClick" value can be a Lua function, a Java onClick interface, or their global variable name.
+The background property supports background images, background colors, and custom LuaDrawable self-drawn backgrounds. The parameter for a background image can be an image name in the current directory, an absolute file path, or a web image URL. Colors are set the same way as backgroundColor. The parameter for a self-drawn background is the drawing function or the global variable name of the drawing function.
+Widget background colors are set using backgroundColor, and the value is a "hexadecimal color value".
+Size units support px, dp, sp, in, mm, %w, %h.
+For other details, refer to loadlayout and loadbitmap.
+
+12. 2D Drawing
+require "import"
+import "android.app.*"
+import "android.os.*"
+import "android.widget.*"
+import "android.view.*"
+import "android.graphics.*"
+activity.setTitle('AndroLua')
+
+paint = Paint()
+paint.setARGB(100, 0, 250, 0)
+paint.setStrokeWidth(20)
+paint.setTextSize(28)
+
+sureface = SurfaceView(activity);
+callback = SurfaceHolder_Callback{
+    surfaceChanged = function(holder, format, width, height)
+    end,
+    surfaceCreated = function(holder)
+        ca = holder.lockCanvas()
+        if (ca ~= nil) then
+            ca.drawRGB(0, 79, 90);
+            ca.drawRect(0, 0, 200, 300, paint)
+        end
+        holder.unlockCanvasAndPost(ca)
+    end,
+    surfaceDestroyed = function(holder)
+    end
+}
+holder = sureface.getHolder()
+holder.addCallback(callback)
+activity.setContentView(sureface)
+
+13. Lua Types and Java Types
+In most cases, AndroLua handles automatic conversion between Lua and Java types efficiently. However, Java has multiple numeric types (double, float, long, int, short, byte), while Lua only has "number". Type casting can be used when necessary:
+i = int(10) -- i becomes a Java int type data
+d = double(10) -- d becomes a Java double type data
+When calling Java methods, AndroLua can automatically convert Lua tables into Java arrays, Maps, or interfaces.
+The Map type can be used as conveniently as a Lua table:
+map = HashMap{a = 1, b = 2}
+print(map.a)
+map.a = 3
+The length operator # can be used to obtain the length of a Java array, List, Map, Set, or String.
+
+14.1 canvas Module
+require "import"
+import "canvas"
+import "android.app.*"
+import "android.os.*"
+import "android.widget.*"
+import "android.view.*"
+import "android.graphics.*"
+activity.setTitle('AndroLua')
+
+paint = Paint()
+paint.setARGB(100, 0, 250, 0)
+paint.setStrokeWidth(20)
+paint.setTextSize(28)
+
+sureface = SurfaceView(activity);
+callback = SurfaceHolder_Callback{
+    surfaceChanged = function(holder, format, width, height)
+    end,
+    surfaceCreated = function(holder)
+        ca = canvas.lockCanvas(holder)
+        if (ca ~= nil) then
+            ca:drawRGB(0, 79, 90)
+            ca:drawRect(0, 0, 200, 300, paint)
+        end
+        canvas.unlockCanvasAndPost(holder, ca)
+    end,
+    surfaceDestroyed = function(holder)
+    end
+}
+holder = sureface.getHolder()
+holder.addCallback(callback)
+activity.setContentView(sureface)
+
+14.2 OpenGL Module
+require "import"
+import "gl"
+import "android.app.*"
+import "android.os.*"
+import "android.widget.*"
+import "android.view.*"
+import "android.opengl.*"
+activity.setTitle('AndroLua')
+
+mTriangleData = {
+    0.0, 0.6, 0.0,
+    -0.6, 0.0, 0.0,
+    0.6, 0.0, 0.0,
+};
+mTriangleColor = {
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+};
+
+sr = GLSurfaceView.Renderer{
+    onSurfaceCreated = function(gl2, config)
+        gl.glDisable(gl.GL_DITHER);
+        gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_FASTEST);
+        gl.glClearColor(0, 0, 0, 0);
+        gl.glShadeModel(gl.GL_SMOOTH);
+        gl.glClearDepth(1.0)
+        gl.glEnable(gl.GL_DEPTH_TEST);
+        gl.glDepthFunc(gl.GL_LEQUAL);
+    end,
+    onDrawFrame = function(gl2, config)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT);
+        gl.glMatrixMode(gl.GL_MODELVIEW);
+        gl.glLoadIdentity();
+        gl.glRotate(0, 1, 1, 1)
+        gl.glTranslate(0, 0, 0);
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY);
+        gl.glEnableClientState(gl.GL_COLOR_ARRAY);
+        gl.glVertexPointer(mTriangleData, 3);
+        gl.glColorPointer(mTriangleColor, 4);
+        gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 3);
+        gl.glFinish();
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY);
+        gl.glDisableClientState(gl.GL_COLOR_ARRAY);
+    end,
+    onSurfaceChanged = function(gl2, w, h)
+        gl.glViewport(0, 0, w, h);
+        gl.glLoadIdentity();
+        ratio = w / h;
+        gl.glFrustum(-ratio, ratio, -1, 1, 1, 10);
+    end
+}
+
+glSurefaceView = GLSurfaceView(activity);
+glSurefaceView.setRenderer(sr);
+activity.setContentView(glSurefaceView);
+
+14.3 http Synchronous Network Module
+body, cookie, code, headers = http.get(url [, cookie, ua, header])
+body, cookie, code, headers = http.post(url, postdata [, cookie, ua, header])
+code, headers = http.download(url [, cookie, ua, ref, header])
+body, cookie, code, headers = http.upload(url, datas, files [, cookie, ua, header])
+
+Parameter Descriptions:
+url          Website URL
+postdata     POST string or string data table
+datas        Upload string data table
+files        Upload filename data table
+cookie       Cookies required by the webpage
+ua           Browser User-Agent identification
+ref          Referer webpage URL
+header       HTTP request headers
+
+require "import"
+import "http"
+
+-- The get function uses a GET request to fetch a webpage. Parameters are the request URL and cookie.
+body, cookie, code, headers = http.get("http://www.androlua.com")
+
+-- The post function uses a POST request to fetch a webpage, usually used to submit forms. Parameters are the URL, the content to send, and cookie.
+body, cookie, code, headers = http.post("http://androlua.com/Login.Asp?Login=Login&Url=http://androlua.com/bbs/index.asp", "name=username&pass=password&ki=1")
+
+-- The download function is similar to the get function but used to download files. Parameters are the request URL, the file save path, and cookie.
+http.download("http://androlua.com", "/sdcard/a.txt")
+
+-- The upload function is used to upload files. Parameters are the request URL, the string content portion formatted as a key=value table, the file portion formatted as a key=filepath table, and the final parameter is the cookie.
+http.upload("http://androlua.com", {title="Title", msg="Content"}, {file1="/sdcard/1.txt", file2="/sdcard/2.txt"})
+
+14.4 import Module
+require "import"
+import "android.widget.*"
+import "android.view.*"
+layout = {
+    LinearLayout,
+    orientation = "vertical",
+    {
+        EditText,
+        id = "edit",
+        layout_width = "fill"
+    },
+    {
+        Button,
+        text = "Button",
+        layout_width = "fill",
+        onClick = "click"
+    }
+}
+
+function click()
+    Toast.makeText(activity, edit.getText().toString(), Toast.LENGTH_SHORT).show()
+end
+activity.setContentView(loadlayout(layout))
+
+14.5 Http Asynchronous Network Module
+Fetch content: get function
+Http.get(url, cookie, charset, header, callback)
+url        Network request URL link
+cookie     The cookie used, which acts as user identity identification for the server
+charset    Content encoding
+header     Request header
+callback   Function executed after the request is completed
+
+Except for url and callback, other parameters are optional.
+
+The callback function accepts four parameter values:
+code       Response code: 2xx means success, 4xx means client error, 5xx means server error, -1 means failure/error
+content    Content; if code is -1, this contains the error message
+cookie     User identity identification information returned by the server
+header     Header information returned by the server
+
+Send data to server: post function
+Http.post(url, data, cookie, charset, header, callback)
+Except for the addition of the "data" parameter, all other parameters are exactly identical to the get function.
+data       Data sent to the server
+
+Send data and files to server: post function
+Http.post(url, data, file, cookie, charset, header, callback)
+Except for the addition of "data" and "file" parameters, all other parameters are exactly identical to the get function.
+data       Data sent to the server, formatted as a key=value table
+file       Files uploaded to the server, formatted as a name=path table
+
+Download file: download function
+Http.download(url, path, cookie, header, callback)
+There is no encoding parameter in the arguments; others are identical to get.
+path       File save path
+
+Note: A maximum of 127 network requests are supported simultaneously; exceeding this will cause an error.
+
+Http is actually a wrapper around Http.HttpTask. Http.HttpTask uses a more generic and flexible format.
+The parameter format is as follows:
+Http.HttpTask(url, String method, cookie, charset, header, callback)
+All parameters are mandatory; pass nil if not needed.
+
+url        Request URL
+method     Request method, can be GET, POST, PUT, DELETE, etc.
+cookie     Authentication credentials
+charset    Content encoding
+header     Request header
+callback   Callback function
+
+This function returns an HttpTask object.
+You must call the execute method to run it:
+t = Http.HttpTask(xxx)
+t.execute{data}
+
+Note that the brackets used for invocation are curly braces {}, and the content can be a string or a byte array. Using this format, you can wrap your own asynchronous upload functions.
+
+15.1 LuaUtil Helper Library
+copyDir(from, to)
+Copies a file or folder. "from" is the source path, "to" is the target path.
+
+zip(from, dir, name)
+Compresses a file or folder. "from" is the source path, "dir" is the target folder, and "name" is the zip file name.
+
+unZip(from, to)
+Extracts a zip file. "from" is the zip file path, "to" is the target destination path.
+
+getFileMD5(path)
+Gets the MD5 hash of a file. "path" is the file path.
+
+getFileSha1(path)
+Gets the SHA-1 hash of a file. "path" is the file path.
+
+15.2 LuaAdapter Adapter
+A list adapter serves as a bridge between data and views. AndroLua+ comes with two built-in adapters: LuaArrayAdapter and LuaAdapter.
+
+  LuaArrayAdapter is relatively simple and can only display simple images or text lists.
+  adp = LuaArrayAdapter(activity, layout)
+
+  In the parameters, "activity" is the current activity, and "layout" is the item layout. The layout only supports basic views like TextView, ImageView, etc., and does not support nested layouts.
+
+  Use adp.add(data) to add data.
+  When the view is a TextView, data is the text to be displayed.
+  When the view is an ImageView, data is the relative or absolute path of the image to be displayed.
+
+  LuaAdapter can implement complex list displays.
+  adp = LuaAdapter(activity, data, layout)
+
+  In the parameters, "activity" is the current activity, "data" is the data table to be displayed, and "layout" is the list
